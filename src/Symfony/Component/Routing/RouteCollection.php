@@ -30,6 +30,7 @@ class RouteCollection implements \IteratorAggregate
     private $resources;
     private $prefix;
     private $parent;
+    private $hostnamePattern;
 
     /**
      * Constructor.
@@ -41,6 +42,7 @@ class RouteCollection implements \IteratorAggregate
         $this->routes = array();
         $this->resources = array();
         $this->prefix = '';
+        $this->hostnamePattern = null;
     }
 
     public function __clone()
@@ -173,12 +175,13 @@ class RouteCollection implements \IteratorAggregate
      * @param array           $defaults     An array of default values
      * @param array           $requirements An array of requirements
      * @param array           $options      An array of options
+     * @param string          $hostnamePattern  Hostname pattern
      *
      * @throws \InvalidArgumentException When the RouteCollection already exists in the tree
      *
      * @api
      */
-    public function addCollection(RouteCollection $collection, $prefix = '', $defaults = array(), $requirements = array(), $options = array())
+    public function addCollection(RouteCollection $collection, $prefix = '', $defaults = array(), $requirements = array(), $options = array(), $hostnamePattern = null)
     {
         // prevent infinite loops by recursive referencing
         $root = $this->getRoot();
@@ -193,6 +196,12 @@ class RouteCollection implements \IteratorAggregate
         // the sub-collection must have the prefix of the parent (current instance) prepended because it does not
         // necessarily already have it applied (depending on the order RouteCollections are added to each other)
         $collection->addPrefix($this->getPrefix() . $prefix, $defaults, $requirements, $options);
+
+        // Allow child collection to have a different pattern
+        if (!$collection->getHostnamePattern()) {
+            $collection->setHostnamePattern($hostnamePattern);
+        }
+
         $this->routes[] = $collection;
     }
 
@@ -326,4 +335,22 @@ class RouteCollection implements \IteratorAggregate
 
         return false;
     }
+
+    public function getHostnamePattern()
+    {
+        return $this->hostnamePattern;
+    }
+
+    public function setHostnamePattern($pattern)
+    {
+        $this->hostnamePattern = $pattern;
+
+        foreach ($this->routes as $name => $route) {
+            // Allow individual routes to have a different pattern
+            if (!$route->getHostnamePattern()) {
+                $route->setHostnamePattern($pattern);
+            }
+        }
+    }
+
 }
