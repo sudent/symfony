@@ -83,29 +83,29 @@ EOF
     {
         $output->writeln($this->getHelper('formatter')->formatSection('router', 'Current routes'));
 
-        $maxName = 4;
-        $maxMethod = 6;
+        $maxName = strlen('name');
+        $maxMethod = strlen('method');
+        $maxHostname = strlen('hostname');
+
         foreach ($routes as $name => $route) {
             $requirements = $route->getRequirements();
             $method = isset($requirements['_method']) ? strtoupper(is_array($requirements['_method']) ? implode(', ', $requirements['_method']) : $requirements['_method']) : 'ANY';
+            $hostname = null !== $route->getHostnamePattern() ? $route->getHostnamePattern() : 'ANY';
 
-            if (strlen($name) > $maxName) {
-                $maxName = strlen($name);
-            }
-
-            if (strlen($method) > $maxMethod) {
-                $maxMethod = strlen($method);
-            }
+            $maxName = max($maxName, strlen($name));
+            $maxMethod = max($maxMethod, strlen($method));
+            $maxHostname = max($maxHostname, strlen($hostname));
         }
-        $format  = '%-'.$maxName.'s %-'.$maxMethod.'s %s';
+        $format  = '%-'.$maxName.'s %-'.$maxMethod.'s %-'.$maxHostname.'s %s';
 
         // displays the generated routes
-        $format1  = '%-'.($maxName + 19).'s %-'.($maxMethod + 19).'s %s';
-        $output->writeln(sprintf($format1, '<comment>Name</comment>', '<comment>Method</comment>', '<comment>Pattern</comment>'));
+        $format1  = '%-'.($maxName + 19).'s %-'.($maxMethod + 19).'s %-'.($maxHostname + 19).'s %s';
+        $output->writeln(sprintf($format1, '<comment>Name</comment>', '<comment>Method</comment>', '<comment>Hostname</comment>', '<comment>Pattern</comment>'));
         foreach ($routes as $name => $route) {
             $requirements = $route->getRequirements();
             $method = isset($requirements['_method']) ? strtoupper(is_array($requirements['_method']) ? implode(', ', $requirements['_method']) : $requirements['_method']) : 'ANY';
-            $output->writeln(sprintf($format, $name, $method, $route->getPattern()));
+            $hostname = null !== $route->getHostnamePattern() ? $route->getHostnamePattern() : 'ANY';
+            $output->writeln(sprintf($format, $name, $method, $hostname, $route->getPattern()));
         }
     }
 
