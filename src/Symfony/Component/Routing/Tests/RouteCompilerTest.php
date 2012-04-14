@@ -171,12 +171,12 @@ class RouteCompilerTest extends \PHPUnit_Framework_TestCase
             array(
                 'Route with hostname pattern and some variables',
                 array('/hello/{name}', array(), array(), array(), 'www.example.{tld}'),
-                '/hello', '#^/hello/(?<name>[^/]+?)$#s', array('tld', 'name'), array('name'), array(
-                    array('variable', '/', '[^/]+?', 'name'),
+                '/hello', '#^/hello/(?<name>[^/]+)$#s', array('tld', 'name'), array('name'), array(
+                    array('variable', '/', '[^/]+', 'name'),
                     array('text', '/hello'),
                 ),
-                '#^www\.example\.(?<tld>[^\.]+?)$#s', array('tld'), array(
-                    array('variable', '.', '[^\.]+?', 'tld'),
+                '#^www\.example\.(?<tld>[^\.]+)$#s', array('tld'), array(
+                    array('variable', '.', '[^\.]+', 'tld'),
                     array('text', 'www.example'),
                 ),
             ),
@@ -186,10 +186,10 @@ class RouteCompilerTest extends \PHPUnit_Framework_TestCase
                 '/hello', '#^/hello$#s', array('locale', 'tld'), array(), array(
                     array('text', '/hello'),
                 ),
-                '#^(?<locale>[^\.]+?)\.example\.(?<tld>[^\.]+?)$#s', array('locale', 'tld'), array(
-                    array('variable', '.', '[^\.]+?', 'tld'),
+                '#^(?<locale>[^\.]+)\.example\.(?<tld>[^\.]+)$#s', array('locale', 'tld'), array(
+                    array('variable', '.', '[^\.]+', 'tld'),
                     array('text', '.example'),
-                    array('variable', '', '[^\.]+?', 'locale'),
+                    array('variable', '', '[^\.]+', 'locale'),
                 ),
             ),
             array(
@@ -198,10 +198,10 @@ class RouteCompilerTest extends \PHPUnit_Framework_TestCase
                 '/hello', '#^/hello$#s', array('locale', 'tld'), array(), array(
                     array('text', '/hello'),
                 ),
-                '#^(?<locale>[^\.]+?)\.example\.(?<tld>[^\.]+?)$#s', array('locale', 'tld'), array(
-                    array('variable', '.', '[^\.]+?', 'tld'),
+                '#^(?<locale>[^\.]+)\.example\.(?<tld>[^\.]+)$#s', array('locale', 'tld'), array(
+                    array('variable', '.', '[^\.]+', 'tld'),
                     array('text', '.example'),
-                    array('variable', '', '[^\.]+?', 'locale'),
+                    array('variable', '', '[^\.]+', 'locale'),
                 ),
             ),            
         );
