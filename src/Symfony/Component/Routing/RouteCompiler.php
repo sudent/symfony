@@ -181,6 +181,7 @@ class RouteCompiler implements RouteCompilerInterface
                         $regexp .= str_repeat(")?", $nbTokens - $firstOptional);
                     }
                 }
+
                 return $regexp;
             }
         }
