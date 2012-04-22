@@ -67,7 +67,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "merged"
+            "dev-merged": "2.1.*"
         }
     }
 }
