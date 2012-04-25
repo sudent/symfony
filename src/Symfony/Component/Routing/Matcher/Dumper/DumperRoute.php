@@ -15,7 +15,7 @@ use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
 /**
- * Container for a Route
+ * Container for a Route.
  *
  * @author Arnaud Le Blanc <arnaud.lb@gmail.com>
  */
@@ -26,6 +26,8 @@ class DumperRoute
     private $parentCollection;
 
     /**
+     * Constructor.
+     *
      * @param string          $name             The route name
      * @param Route           $route            The route
      * @param RouteCollection $parentCollection The parent of the route
@@ -38,7 +40,7 @@ class DumperRoute
     }
 
     /**
-     * Returns the route name
+     * Returns the route name.
      *
      * @return string The route name
      */
@@ -48,7 +50,7 @@ class DumperRoute
     }
 
     /**
-     * Returns the route
+     * Returns the route.
      *
      * @return Route The route
      */
@@ -58,7 +60,7 @@ class DumperRoute
     }
 
     /**
-     * Returns the parent collection
+     * Returns the parent collection.
      *
      * @return RouteCollection the parent collection
      */

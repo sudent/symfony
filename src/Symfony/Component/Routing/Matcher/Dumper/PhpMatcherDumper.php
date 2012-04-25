@@ -135,8 +135,7 @@ EOF;
         $fetchedHostname = false;
 
         foreach ($collections as $collection) {
-            if ($regex = $collection->get('hostnameRegex')) {
-
+            if ($regex = $collection->get('hostname_regex')) {
                 if (!$fetchedHostname) {
                     $code .= "        \$hostname = \$this->context->getHost();\n\n";
                     $fetchedHostname = true;
@@ -164,15 +163,11 @@ EOF;
     {
         $code = '';
         $indent = 0;
-
         $prefix = $collection->getPrefix();
-
         $optimizable = 1 < strlen($prefix) && 1 < count($collection->getRoutes());
-
         $optimizedPrefix = $parentPrefix;
 
         if ($optimizable) {
-
             $optimizedPrefix = $prefix;
 
             $code .= sprintf("        if (0 === strpos(\$pathinfo, %s)) {\n", var_export($prefix, true));
@@ -311,7 +306,6 @@ EOF;
 
         // optimize parameters array
         if (($matches || $hostnameMatches) && $route->getDefaults()) {
-
             $vars = array();
             if ($matches) {
                 $vars[] = '$matches';
@@ -353,10 +347,11 @@ EOF;
     }
 
     /**
-     * Prepends the given number of spaces at the begining of each line
+     * Prepends the given number of spaces at the begining of each line.
      *
      * @param  string $lines Lines of code
      * @param  int    $width The number of spaces
+     *
      * @return string Indented lines
      */
     private function indentCode($lines, $width)
@@ -365,10 +360,9 @@ EOF;
     }
 
     /**
-     * Groups consecutive routes having the same hostnameRegex
+     * Groups consecutive routes having the same hostname regex.
      *
-     * The results is a collection of collections of routes having the same
-     * hostnameRegex
+     * The results is a collection of collections of routes having the same hostname regex.
      */
     private function groupRoutesByHostnameRegex(RouteCollection $routes, DumperCollection $root = null, DumperCollection $collection = null)
     {
@@ -378,30 +372,24 @@ EOF;
 
         if (null === $collection) {
             $collection = new DumperCollection();
-            $collection->set('hostnameRegex', null);
+            $collection->set('hostname_regex', null);
 
             $root->addRoute($collection);
         }
 
         foreach ($routes as $name => $route) {
-
             if ($route instanceof RouteCollection) {
-
                 $collection = $this->groupRoutesByHostnameRegex($route, $root, $collection);
-
             } else {
-
                 $regex = $route->compile()->getHostnameRegex();
 
-                if ($regex !== $collection->get('hostnameRegex')) {
-
+                if ($regex !== $collection->get('hostname_regex')) {
                     $collection = new DumperCollection();
-                    $collection->set('hostnameRegex', $regex);
+                    $collection->set('hostname_regex', $regex);
                     $root->addRoute($collection);
                 }
 
                 $collection->addRoute(new DumperRoute($name, $route, $routes));
-
             }
         }
 
@@ -409,14 +397,14 @@ EOF;
     }
 
     /**
-     * Organizes the routes into a prefix tree
+     * Organizes the routes into a prefix tree.
      *
      * Routes order is preserved such that traversing the tree will traverse the
      * routes in the origin order
      */
     private function buildPrefixTree(DumperCollection $collection)
     {
-        $tree = new DumperPrefixCollection;
+        $tree = new DumperPrefixCollection();
         $tree->setPrefix('');
         $current = $tree;
 
