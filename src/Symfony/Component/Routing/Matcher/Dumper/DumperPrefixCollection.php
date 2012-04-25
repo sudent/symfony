@@ -12,7 +12,7 @@
 namespace Symfony\Component\Routing\Matcher\Dumper;
 
 /**
- * Prefix tree of routes preserving routes order
+ * Prefix tree of routes preserving routes order.
  *
  * @author Arnaud Le Blanc <arnaud.lb@gmail.com>
  */
@@ -21,7 +21,7 @@ class DumperPrefixCollection extends DumperCollection
     private $prefix;
 
     /**
-     * Returns the prefix
+     * Returns the prefix.
      *
      * @return string The prefix
      */
@@ -31,7 +31,7 @@ class DumperPrefixCollection extends DumperCollection
     }
 
     /**
-     * Sets the prefix
+     * Sets the prefix.
      *
      * @param string $prefix The prefix
      */
@@ -41,9 +41,10 @@ class DumperPrefixCollection extends DumperCollection
     }
 
     /**
-     * Adds a route in the tree
+     * Adds a route in the tree.
      *
-     * @param  DumperRoute $route The route
+     * @param DumperRoute $route The route
+     *
      * @return DumperPrefixCollection The node the route was added to
      */
     public function addPrefixRoute(DumperRoute $route)
@@ -52,8 +53,8 @@ class DumperPrefixCollection extends DumperCollection
 
         if ($this->getPrefix() === $prefix) {
             $this->addRoute($route);
-            return $this;
 
+            return $this;
         } else if ('' === $this->getPrefix() || 0 === strpos($prefix, $this->getPrefix())) {
             $prev = $this;
             for ($i = strlen($this->getPrefix()); $i < strlen($prefix); ++$i) {
@@ -66,10 +67,8 @@ class DumperPrefixCollection extends DumperCollection
             $collection->addRoute($route);
 
             return $collection;
-
         } else {
             return $this->getParent()->addPrefixRoute($route);
         }
     }
 }
-

@@ -295,7 +295,7 @@ class PhpMatcherDumperTest extends \PHPUnit_Framework_TestCase
 
         $string = $result->toString(function($route) {
             if ($route instanceof DumperCollection) {
-                $re = $route->get('hostnameRegex');
+                $re = $route->get('hostname_regex');
                 if (null !== $re) {
                     $re = str_replace(array("\n", " "), '', $re);
                 }
