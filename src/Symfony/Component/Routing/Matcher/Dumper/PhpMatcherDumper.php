@@ -130,11 +130,12 @@ EOF;
     private function compileRoutes(RouteCollection $routes, $supportsRedirections)
     {
         $code = '';
-        $indent = 0;
         $collections = $this->groupRoutesByHostnameRegex($routes)->getRoot();
         $fetchedHostname = false;
 
         foreach ($collections as $collection) {
+            $indent = 0;
+
             if ($regex = $collection->get('hostname_regex')) {
                 if (!$fetchedHostname) {
                     $code .= "        \$hostname = \$this->context->getHost();\n\n";
@@ -151,7 +152,6 @@ EOF;
             $code .= $this->indentCode($lines, $indent);
 
             if ($regex) {
-                $indent = 0;
                 $code .= "        }\n\n";
             }
         }
@@ -184,7 +184,6 @@ EOF;
         }
 
         if ($optimizable) {
-            $indent = 0;
             $code .= "        }\n\n";
         }
 
@@ -352,7 +351,7 @@ EOF;
      */
     private function indentCode($lines, $width)
     {
-        return preg_replace('#^(?=.)#', str_repeat(' ', $width), $lines);
+        return preg_replace('#^(?=.)#m', str_repeat(' ', $width), $lines);
     }
 
     /**

@@ -42,8 +42,7 @@ class PhpMatcherDumperTest extends \PHPUnit_Framework_TestCase
         $basePath = __DIR__.'/../../Fixtures/dumper/';
 
         $dumper = new PhpMatcherDumper($collection, new RequestContext());
-
-        file_put_contents('/tmp/' . $fixture, $dumper->dump($options));
+        file_put_contents('/tmp/'.$fixture, $dumper->dump($options));
         $this->assertStringEqualsFile($basePath.$fixture, $dumper->dump($options), '->dump() correctly dumps routes as optimized PHP code.');
     }
 
