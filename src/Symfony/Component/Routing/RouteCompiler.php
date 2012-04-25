@@ -63,11 +63,11 @@ class RouteCompiler implements RouteCompilerInterface
             $staticPrefix,
             $regex,
             $tokens,
-            array_unique($variables),
             $pathVariables,
-            $hostnameVariables,
             $hostnameRegex,
-            $hostnameTokens
+            $hostnameTokens,
+            $hostnameVariables,
+            array_unique($variables)
         );
     }
 
