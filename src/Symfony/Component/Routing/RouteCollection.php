@@ -352,5 +352,4 @@ class RouteCollection implements \IteratorAggregate
             }
         }
     }
-
 }
