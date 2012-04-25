@@ -65,11 +65,11 @@ class RouteCompiler implements RouteCompilerInterface
             $staticPrefix,
             $regex,
             $tokens,
-            array_unique($variables),
             $pathVariables,
-            $hostnameVariables,
             $hostnameRegex,
-            $hostnameTokens
+            $hostnameTokens,
+            $hostnameVariables,
+            array_unique($variables)
         );
     }
 
@@ -181,7 +181,6 @@ class RouteCompiler implements RouteCompilerInterface
                         $regexp .= str_repeat(")?", $nbTokens - $firstOptional);
                     }
                 }
-
                 return $regexp;
             }
         }
