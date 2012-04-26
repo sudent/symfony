@@ -12,7 +12,7 @@
 namespace Symfony\Component\Routing\Matcher\Dumper;
 
 /**
- * Collection of routes with attributes
+ * Collection of routes with attributes.
  *
  * @author Arnaud Le Blanc <arnaud.lb@gmail.com>
  */
@@ -23,8 +23,10 @@ class DumperCollection implements \IteratorAggregate
     private $attributes;
 
     /**
-     * @param  array   $routes     Array of DumperCollection|DumperRoute
-     * @param  array   $atributes  Array of attributes
+     * Constructor.
+     *
+     * @param array $routes    Array of DumperCollection|DumperRoute
+     * @param array $atributes Array of attributes
      */
     public function __construct(array $routes = array(), array $attributes = array())
     {
@@ -33,7 +35,7 @@ class DumperCollection implements \IteratorAggregate
     }
 
     /**
-     * Returns the parent collection
+     * Returns the parent collection.
      *
      * @return DumperCollection The parent collection
      */
@@ -43,7 +45,7 @@ class DumperCollection implements \IteratorAggregate
     }
 
     /**
-     * Sets the parent collection
+     * Sets the parent collection.
      *
      * @param DumperCollection $parent The parent collection
      */
@@ -53,7 +55,7 @@ class DumperCollection implements \IteratorAggregate
     }
 
     /**
-     * Returns the child routes
+     * Returns the child routes.
      *
      * @return array Array of DumperCollection|DumperRoute
      */
@@ -63,9 +65,10 @@ class DumperCollection implements \IteratorAggregate
     }
 
     /**
-     * Gets a route by index
+     * Gets a route by index.
      *
-     * @param  int $index                   The index
+     * @param int $index The index
+     *
      * @return DumperCollection|DumperRoute The route at given index
      */
     public function getRoute($index)
@@ -74,7 +77,7 @@ class DumperCollection implements \IteratorAggregate
     }
 
     /**
-     * Adds a route or route collection
+     * Adds a route or route collection.
      *
      * @param DumperCollection|DumperRoute The route or route collection
      */
@@ -87,9 +90,10 @@ class DumperCollection implements \IteratorAggregate
     }
 
     /**
-     * Returns true if the attribute is defined
+     * Returns true if the attribute is defined.
      *
      * @param  string  $name The attribute name
+     *
      * @return Boolean true if the attribute is defined, false otherwise
      */
     public function has($name)
@@ -98,23 +102,20 @@ class DumperCollection implements \IteratorAggregate
     }
 
     /**
-     * Returns an attribute by name
+     * Returns an attribute by name.
      *
-     * @param  string $name      The attribute name
-     * @param  mixed  $default   Default value is the attribute doesn't exist
+     * @param string $name    The attribute name
+     * @param mixed  $default Default value is the attribute doesn't exist
+     *
      * @return mixed  The attribute value
      */
     public function get($name, $default = null)
     {
-        if ($this->has($name)) {
-            return $this->attributes[$name];
-        } else {
-            return $default;
-        }
+        return $this->has($name) ? $this->attributes[$name] : $default;
     }
 
     /**
-     * Sets an attribute by name
+     * Sets an attribute by name.
      *
      * @param string $name  The attribute name
      * @param mixed  $value The attribute value
@@ -125,7 +126,7 @@ class DumperCollection implements \IteratorAggregate
     }
 
     /**
-     * Returns an iterator over the children
+     * Returns an iterator over the children.
      *
      * @return \Iterator The iterator
      */
@@ -135,11 +136,12 @@ class DumperCollection implements \IteratorAggregate
     }
 
     /**
-     * Clones the collection and its parents, up to the given parent
+     * Clones the collection and its parents, up to the given parent.
      *
-     * Children are reset
+     * Children are reset.
      *
-     * @param  DumperCollection $until If given, cloning will stop before this parent
+     * @param DumperCollection $until If given, cloning will stop before this parent
+     *
      * @return DumperCollection The cloned collection
      */
     public function cloneHierarchyUntil(DumperCollection $until = null)
@@ -160,35 +162,27 @@ class DumperCollection implements \IteratorAggregate
     }
 
     /**
-     * Returns the root of the collection
+     * Returns the root of the collection.
      *
      * @return DumperCollection|null The root collection
      */
     public function getRoot()
     {
-        if (null !== $parent = $this->parent) {
-            return $parent->getRoot();
-        } else {
-            return $this;
-        }
+        return (null !== $parent = $this->parent) ? $parent->getRoot() : $this;
     }
 
     /**
-     * Returns an array of parent collections, from the closer parent to the root
+     * Returns an array of parent collections, from the closer parent to the root.
      *
      * @return array Array of DumperCollection parents
      */
     public function getParents()
     {
-        if ($parent = $this->parent) {
-            return array_merge(array($parent), $parent->getParents());
-        } else {
-            return array();
-        }
+        return $this->parent ? array_merge(array($this->parent), $this->parent->getParents()) : array();
     }
 
     /**
-     * Returns an array of this collection and its parents, from this collection to the root
+     * Returns an array of this collection and its parents, from this collection to the root.
      *
      * @return array Array of DumperCollection collections
      */
@@ -198,7 +192,7 @@ class DumperCollection implements \IteratorAggregate
     }
 
     /**
-     * Returns a debug string representation of this collection
+     * Returns a debug string representation of this collection.
      *
      * @param Callable $toString Callback used to get the string representation of each individual child
      * @param string   $prefix   String prepended to each line
@@ -216,4 +210,3 @@ class DumperCollection implements \IteratorAggregate
         return $string;
     }
 }
-
