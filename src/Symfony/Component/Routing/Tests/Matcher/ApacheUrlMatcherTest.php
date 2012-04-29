@@ -39,9 +39,9 @@ class ApacheUrlMatcherTest extends \PHPUnit_Framework_TestCase
                 'Simple route',
                 '/hello/world',
                 array(
-                    '_ROUTING__route' => 'hello',
-                    '_ROUTING__controller' => 'AcmeBundle:Default:index',
-                    '_ROUTING_name' => 'world',
+                    '_ROUTING_route' => 'hello',
+                    '_ROUTING_default__controller' => 'AcmeBundle:Default:index',
+                    '_ROUTING_param_name' => 'world',
                 ),
                 array(
                     '_route' => 'hello',
@@ -53,9 +53,9 @@ class ApacheUrlMatcherTest extends \PHPUnit_Framework_TestCase
                 'REDIRECT_ envs',
                 '/hello/world',
                 array(
-                    'REDIRECT__ROUTING__route' => 'hello',
-                    'REDIRECT__ROUTING__controller' => 'AcmeBundle:Default:index',
-                    'REDIRECT__ROUTING_name' => 'world',
+                    'REDIRECT__ROUTING_route' => 'hello',
+                    'REDIRECT__ROUTING_default__controller' => 'AcmeBundle:Default:index',
+                    'REDIRECT__ROUTING_param_name' => 'world',
                 ),
                 array(
                     '_route' => 'hello',

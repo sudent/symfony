@@ -40,23 +40,34 @@ class ApacheUrlMatcher extends UrlMatcher
         foreach ($_SERVER as $key => $value) {
             $name = $key;
 
-            if (0 === strpos($name, 'REDIRECT_')) {
+            while (0 === strpos($name, 'REDIRECT_')) {
                 $name = substr($name, 9);
             }
 
+            // expects _ROUTING_<type>_<name>
+            // or _ROUTING_<type>
             if (0 === strpos($name, '_ROUTING_')) {
-                $name = substr($name, 9);
+                if (false !== $pos = strpos($name, '_', 9)) {
+                    $type = substr($name, 9, $pos-9);
+                    $name = substr($name, $pos+1);
+                } else {
+                    $type = substr($name, 9);
+                }
             } else {
                 continue;
             }
 
-            if ('_route' == $name) {
+            if ('route' === $type) {
                 $match = true;
+                $parameters['_route'] = $value;
+            } else if ('allow' === $type) {
+                $allow[] = $name;
+            } else if ('param' === $type) {
                 $parameters[$name] = $value;
-            } elseif (0 === strpos($name, '_allow_')) {
-                $allow[] = substr($name, 7);
-            } else {
-                $parameters[$name] = $value;
+            } else if ('default' === $type) {
+                if (!isset($parameters[$name])) {
+                    $parameters[$name] = $value;
+                }
             }
 
             unset($_SERVER[$key]);
