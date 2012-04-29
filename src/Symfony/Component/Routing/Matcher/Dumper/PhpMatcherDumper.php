@@ -407,6 +407,8 @@ EOF;
             $current = $current->addPrefixRoute($route);
         }
 
+        $tree->mergeSlashNodes();
+
         return $tree;
     }
 }
