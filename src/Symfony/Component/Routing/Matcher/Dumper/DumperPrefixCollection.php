@@ -71,4 +71,30 @@ class DumperPrefixCollection extends DumperCollection
             return $this->getParent()->addPrefixRoute($route);
         }
     }
+
+    /**
+     * Merges nodes whose prefix ends with a slash
+     *
+     * Children of a node whose prefix ends with a slash are moved to the parent node
+     */
+    public function mergeSlashNodes()
+    {
+        $routes = array();
+        $stack = array_reverse($this->getRoutes());
+
+        while (null !== $route = array_pop($stack)) {
+            if ($route instanceof static) {
+                if ('/' === substr($route->getPrefix(), -1)) {
+                    $stack = array_merge($stack, array_reverse($route->getRoutes()));
+                } else {
+                    $route->mergeSlashNodes();
+                    $routes[] = $route;
+                }
+            } else {
+                $routes[] = $route;
+            }
+        }
+
+        $this->setRoutes($routes);
+    }
 }
