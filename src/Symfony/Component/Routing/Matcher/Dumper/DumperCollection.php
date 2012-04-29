@@ -90,6 +90,21 @@ class DumperCollection implements \IteratorAggregate
     }
 
     /**
+     * Sets routes
+     *
+     * @param array $routes The routes
+     */
+    public function setRoutes(array $routes)
+    {
+        foreach ($routes as $route) {
+            if ($route instanceof DumperCollection) {
+                $route->setParent($this);
+            }
+        }
+        $this->routes = $routes;
+    }
+
+    /**
      * Returns true if the attribute is defined.
      *
      * @param  string  $name The attribute name

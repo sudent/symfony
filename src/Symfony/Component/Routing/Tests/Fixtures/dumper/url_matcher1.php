@@ -174,7 +174,7 @@ class ProjectUrlMatcher extends Symfony\Component\Routing\Matcher\UrlMatcher
 
         }
 
-        if (0 === strpos($pathinfo, '/multi/')) {
+        if (0 === strpos($pathinfo, '/multi')) {
             // helloWorld
             if (0 === strpos($pathinfo, '/multi/hello') && preg_match('#^/multi/hello(?:/(?<who>[^/]+))?$#s', $pathinfo, $matches)) {
                 return array_merge($this->mergeDefaults($matches, array (  'who' => 'World!',)), array('_route' => 'helloWorld'));
@@ -320,7 +320,7 @@ class ProjectUrlMatcher extends Symfony\Component\Routing\Matcher\UrlMatcher
 
         }
 
-        if (0 === strpos($pathinfo, '/a/')) {
+        if (0 === strpos($pathinfo, '/a')) {
             // a
             if ($pathinfo === '/a/a...') {
                 return array('_route' => 'a');
