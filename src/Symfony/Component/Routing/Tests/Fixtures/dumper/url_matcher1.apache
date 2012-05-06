@@ -68,6 +68,14 @@ RewriteRule .* app.php [QSA,L,E=_ROUTING_route:baz6,E=_ROUTING_default_foo:bar\ 
 RewriteCond %{REQUEST_URI} ^/te\ st/baz$
 RewriteRule .* app.php [QSA,L,E=_ROUTING_route:baz7]
 
+# baz8
+RewriteCond %{REQUEST_URI} ^/te\\\ st/baz$
+RewriteRule .* app.php [QSA,L,E=_ROUTING_route:baz8]
+
+# baz9
+RewriteCond %{REQUEST_URI} ^/test/(te\\\ st)$
+RewriteRule .* app.php [QSA,L,E=_ROUTING_route:baz9,E=_ROUTING_param_baz:%1]
+
 # 405 Method Not Allowed
 RewriteCond %{ENV:_ROUTING_allow_GET} =1 [OR]
 RewriteCond %{ENV:_ROUTING_allow_HEAD} =1 [OR]
