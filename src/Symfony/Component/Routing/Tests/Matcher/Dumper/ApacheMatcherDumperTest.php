@@ -98,6 +98,18 @@ class ApacheMatcherDumperTest extends \PHPUnit_Framework_TestCase
         $collection->add('baz7', new Route(
             '/te st/baz'
         ));
+        // space preceded with \ in path
+        $collection->add('baz8', new Route(
+            '/te\\ st/baz'
+        ));
+        // space preceded with \ in requirement
+        $collection->add('baz9', new Route(
+            '/test/{baz}',
+            array(),
+            array(
+                'baz' => 'te\\\\ st',
+            )
+        ));
 
         return $collection;
     }
