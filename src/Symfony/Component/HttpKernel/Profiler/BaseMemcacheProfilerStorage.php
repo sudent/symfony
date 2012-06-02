@@ -95,7 +95,28 @@ abstract class BaseMemcacheProfilerStorage implements ProfilerStorageInterface
      */
     public function purge()
     {
-        $this->flush();
+        // delete only items from index
+        $indexName = $this->getIndexName();
+
+        $indexContent = $this->getValue($indexName);
+
+        if (!$indexContent) {
+            return false;
+        }
+
+        $profileList = explode("\n", $indexContent);
+
+        foreach ($profileList as $item) {
+            if ($item == '') {
+                continue;
+            }
+
+            if (false !== $pos = strpos($item, "\t")) {
+                $this->delete($this->getItemName(substr($item, 0, $pos)));
+            }
+        }
+
+        return $this->delete($indexName);
     }
 
     /**
@@ -164,25 +185,27 @@ abstract class BaseMemcacheProfilerStorage implements ProfilerStorageInterface
      * Store an item on the memcache server under the specified key
      *
      * @param string $key
-     * @param mixed $value
-     * @param int $expiration
+     * @param mixed  $value
+     * @param int    $expiration
      *
      * @return boolean
      */
     abstract protected function setValue($key, $value, $expiration = 0);
 
     /**
-     * Flush all existing items at the memcache server
+     * Delete item from the memcache server
+     *
+     * @param string $key
      *
      * @return boolean
      */
-    abstract protected function flush();
+    abstract protected function delete($key);
 
     /**
      * Append data to an existing item on the memcache server
      * @param string $key
      * @param string $value
-     * @param int $expiration
+     * @param int    $expiration
      *
      * @return boolean
      */

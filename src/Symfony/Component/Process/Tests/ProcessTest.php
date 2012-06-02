@@ -68,6 +68,18 @@ class ProcessTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(0, $p->getExitCode());
     }
 
+    public function testCallbackIsExecutedForOutput()
+    {
+        $p = new Process(sprintf('php -r %s', escapeshellarg('echo \'foo\';')));
+
+        $called = false;
+        $p->run(function ($type, $buffer) use (&$called) {
+            $called = $buffer === 'foo';
+        });
+
+        $this->assertTrue($called, 'The callback should be executed with the output');
+    }
+
     public function testExitCodeText()
     {
         $process = new Process('');
@@ -152,8 +164,7 @@ class ProcessTest extends \PHPUnit_Framework_TestCase
         $baseData = str_repeat('*', 1024);
 
         $codes = array();
-        foreach (array(1, 16, 64, 1024, 4096) as $size)
-        {
+        foreach (array(1, 16, 64, 1024, 4096) as $size) {
             $data = str_repeat($baseData, $size) . '!';
             foreach ($variations as $code) {
                 $codes[] = array($data, $code);

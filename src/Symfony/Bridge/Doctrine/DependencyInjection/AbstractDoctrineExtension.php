@@ -39,7 +39,7 @@ abstract class AbstractDoctrineExtension extends Extension
      */
     protected $drivers = array();
 
-    /*
+    /**
      * @param array            $objectManager A configured object manager.
      * @param ContainerBuilder $container     A ContainerBuilder instance
      */
@@ -102,7 +102,7 @@ abstract class AbstractDoctrineExtension extends Extension
      *
      * Aliases can be used in the Query languages of all the Doctrine object managers to simplify writing tasks.
      *
-     * @param array $mappingConfig
+     * @param array  $mappingConfig
      * @param string $mappingName
      */
     protected function setMappingDriverAlias($mappingConfig, $mappingName)

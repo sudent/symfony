@@ -19,22 +19,7 @@ use Symfony\Component\Form\Exception\UnexpectedTypeException;
 class PropertyPathMapper implements DataMapperInterface
 {
     /**
-     * Stores the class that the data of this form must be instances of.
-     *
-     * @var string
-     */
-    private $dataClass;
-
-    public function __construct($dataClass = null)
-    {
-        $this->dataClass = $dataClass;
-    }
-
-    /**
-     * @param dataClass $data
-     * @param array $forms
-     *
-     * @throws UnexpectedTypeException if the type of the data parameter is not supported
+     * {@inheritdoc}
      */
     public function mapDataToForms($data, array $forms)
     {
@@ -43,58 +28,44 @@ class PropertyPathMapper implements DataMapperInterface
         }
 
         if (!empty($data)) {
-            if (null !== $this->dataClass && !$data instanceof $this->dataClass) {
-                throw new UnexpectedTypeException($data, $this->dataClass);
-            }
-
             $iterator = new VirtualFormAwareIterator($forms);
             $iterator = new \RecursiveIteratorIterator($iterator);
 
             foreach ($iterator as $form) {
-                $this->mapDataToForm($data, $form);
-            }
-        }
-    }
+                /* @var FormInterface $form */
+                $propertyPath = $form->getPropertyPath();
+                $config = $form->getConfig();
 
-    public function mapDataToForm($data, FormInterface $form)
-    {
-        if (!empty($data)) {
-            $propertyPath = $form->getAttribute('property_path');
-
-            if (null !== $propertyPath) {
-                $propertyData = $propertyPath->getValue($data);
-
-                if (is_object($propertyData) && !$form->getAttribute('by_reference')) {
-                    $propertyData = clone $propertyData;
+                if (null !== $propertyPath && $config->getMapped()) {
+                    $form->setData($propertyPath->getValue($data));
                 }
-
-                $form->setData($propertyData);
             }
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function mapFormsToData(array $forms, &$data)
     {
         $iterator = new VirtualFormAwareIterator($forms);
         $iterator = new \RecursiveIteratorIterator($iterator);
 
         foreach ($iterator as $form) {
-            $this->mapFormToData($form, $data);
-        }
-    }
+            /* @var FormInterface $form */
+            $propertyPath = $form->getPropertyPath();
+            $config = $form->getConfig();
 
-    public function mapFormToData(FormInterface $form, &$data)
-    {
-        $propertyPath = $form->getAttribute('property_path');
+            // Write-back is disabled if the form is not synchronized (transformation failed)
+            // and if the form is disabled (modification not allowed)
+            if (null !== $propertyPath && $config->getMapped() && $form->isSynchronized() && !$form->isDisabled()) {
+                // If the data is identical to the value in $data, we are
+                // dealing with a reference
+                $isReference = $form->getData() === $propertyPath->getValue($data);
 
-        if (null !== $propertyPath && $form->isSynchronized()) {
-            // If the data is identical to the value in $data, we are
-            // dealing with a reference
-            $isReference = $form->getData() === $propertyPath->getValue($data);
-            $byReference = $form->getAttribute('by_reference');
-
-            if (!(is_object($data) && $isReference && $byReference)) {
-                $propertyPath->setValue($data, $form->getData());
+                if (!is_object($data) || !$isReference || !$config->getByReference()) {
+                    $propertyPath->setValue($data, $form->getData());
+                }
             }
         }
     }

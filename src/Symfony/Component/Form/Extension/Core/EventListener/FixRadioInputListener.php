@@ -12,7 +12,7 @@
 namespace Symfony\Component\Form\Extension\Core\EventListener;
 
 use Symfony\Component\Form\FormEvents;
-use Symfony\Component\Form\Event\FilterDataEvent;
+use Symfony\Component\Form\FormEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Form\Extension\Core\ChoiceList\ChoiceListInterface;
 
@@ -20,7 +20,7 @@ use Symfony\Component\Form\Extension\Core\ChoiceList\ChoiceListInterface;
  * Takes care of converting the input from a single radio button
  * to an array.
  *
- * @author Bernhard Schussek <bernhard.schussek@symfony-project.com>
+ * @author Bernhard Schussek <bschussek@gmail.com>
  */
 class FixRadioInputListener implements EventSubscriberInterface
 {
@@ -36,7 +36,7 @@ class FixRadioInputListener implements EventSubscriberInterface
         $this->choiceList = $choiceList;
     }
 
-    public function onBindClientData(FilterDataEvent $event)
+    public function preBind(FormEvent $event)
     {
         $value = $event->getData();
         $index = current($this->choiceList->getIndicesForValues(array($value)));
@@ -46,6 +46,6 @@ class FixRadioInputListener implements EventSubscriberInterface
 
     static public function getSubscribedEvents()
     {
-        return array(FormEvents::BIND_CLIENT_DATA => 'onBindClientData');
+        return array(FormEvents::PRE_BIND => 'preBind');
     }
 }

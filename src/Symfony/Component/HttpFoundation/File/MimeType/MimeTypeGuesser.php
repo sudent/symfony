@@ -28,7 +28,7 @@ use Symfony\Component\HttpFoundation\File\Exception\AccessDeniedException;
  *
  * The last registered guesser is preferred over previously registered ones.
  *
- * @author Bernhard Schussek <bernhard.schussek@symfony.com>
+ * @author Bernhard Schussek <bschussek@gmail.com>
  */
 class MimeTypeGuesser implements MimeTypeGuesserInterface
 {
@@ -92,7 +92,7 @@ class MimeTypeGuesser implements MimeTypeGuesserInterface
      * returns a value that is not NULL, this method terminates and returns the
      * value.
      *
-     * @param  string $path   The path to the file
+     * @param string $path The path to the file
      *
      * @return string         The mime type or NULL, if none could be guessed
      *

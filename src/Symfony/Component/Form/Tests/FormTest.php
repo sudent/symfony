@@ -12,6 +12,8 @@
 namespace Symfony\Component\Form\Tests;
 
 use Symfony\Component\Form\Form;
+use Symfony\Component\Form\Util\PropertyPath;
+use Symfony\Component\Form\FormConfig;
 use Symfony\Component\Form\FormView;
 use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\Form\FormError;
@@ -51,141 +53,23 @@ class FormTest extends \PHPUnit_Framework_TestCase
         $this->form = null;
     }
 
-    /**
-     * @expectedException Symfony\Component\Form\Exception\UnexpectedTypeException
-     */
-    public function testConstructExpectsValidValidators()
-    {
-        $validators = array(new \stdClass());
-
-        new Form('name', $this->dispatcher, array(), array(), array(), null, $validators);
-    }
-
-    public function getHtml4Ids()
-    {
-        return array(
-            array('a0', true),
-            array('a9', true),
-            array('z0', true),
-            array('A0', true),
-            array('A9', true),
-            array('Z0', true),
-            array('#', false),
-            array('a#', false),
-            array('a$', false),
-            array('a%', false),
-            array('a ', false),
-            array("a\t", false),
-            array("a\n", false),
-            array('a-', true),
-            array('a_', true),
-            array('a:', true),
-            // Periods are allowed by the HTML4 spec, but disallowed by us
-            // because they break the generated property paths
-            array('a.', false),
-            // Contrary to the HTML4 spec, we allow names starting with a
-            // number, otherwise naming fields by collection indices is not
-            // possible.
-            // For root forms, leading digits will be stripped from the
-            // "id" attribute to produce valid HTML4.
-            array('0', true),
-            array('9', true),
-            // Contrary to the HTML4 spec, we allow names starting with an
-            // underscore, since this is already a widely used practice in
-            // Symfony2.
-            // For root forms, leading underscores will be stripped from the
-            // "id" attribute to produce valid HTML4.
-            array('_', true),
-        );
-    }
-
-    /**
-     * @dataProvider getHtml4Ids
-     */
-    public function testConstructAcceptsOnlyNamesValidAsIdsInHtml4($name, $accepted)
-    {
-        try {
-            new Form($name, $this->dispatcher);
-            if (!$accepted) {
-                $this->fail(sprintf('The value "%s" should not be accepted', $name));
-            }
-        } catch (\InvalidArgumentException $e) {
-            // if the value was not accepted, but should be, rethrow exception
-            if ($accepted) {
-                throw $e;
-            }
-        }
-    }
-
     public function testDataIsInitializedEmpty()
     {
-        $norm = new FixedDataTransformer(array(
+        $model = new FixedDataTransformer(array(
             '' => 'foo',
         ));
-        $client = new FixedDataTransformer(array(
+        $view = new FixedDataTransformer(array(
             'foo' => 'bar',
         ));
 
-        $form = new Form('name', $this->dispatcher, array(), array($client), array($norm));
+        $config = new FormConfig('name', null, $this->dispatcher);
+        $config->addViewTransformer($view);
+        $config->addModelTransformer($model);
+        $form = new Form($config);
 
         $this->assertNull($form->getData());
         $this->assertSame('foo', $form->getNormData());
-        $this->assertSame('bar', $form->getClientData());
-    }
-
-    public function testErrorsBubbleUpIfEnabled()
-    {
-        $error = new FormError('Error!');
-        $parent = $this->form;
-        $form = $this->getBuilder()->setErrorBubbling(true)->getForm();
-
-        $form->setParent($parent);
-        $form->addError($error);
-
-        $this->assertEquals(array(), $form->getErrors());
-        $this->assertEquals(array($error), $parent->getErrors());
-    }
-
-    public function testErrorsDontBubbleUpIfDisabled()
-    {
-        $error = new FormError('Error!');
-        $parent = $this->form;
-        $form = $this->getBuilder()->setErrorBubbling(false)->getForm();
-
-        $form->setParent($parent);
-        $form->addError($error);
-
-        $this->assertEquals(array($error), $form->getErrors());
-        $this->assertEquals(array(), $parent->getErrors());
-    }
-
-    public function testErrorsBubbleUpIfNullAndChildren()
-    {
-        $error = new FormError('Error!');
-        $parent = $this->form;
-        $form = $this->getBuilder()
-            ->setErrorBubbling(null)
-            ->add($this->getBuilder('child'))
-            ->getForm();
-
-        $form->setParent($parent);
-        $form->addError($error);
-
-        $this->assertEquals(array(), $form->getErrors());
-        $this->assertEquals(array($error), $parent->getErrors());
-    }
-
-    public function testErrorsDontBubbleUpIfNullAndNoChildren()
-    {
-        $error = new FormError('Error!');
-        $parent = $this->form;
-        $form = $this->getBuilder()->setErrorBubbling(null)->getForm();
-
-        $form->setParent($parent);
-        $form->addError($error);
-
-        $this->assertEquals(array($error), $form->getErrors());
-        $this->assertEquals(array(), $parent->getErrors());
+        $this->assertSame('bar', $form->getViewData());
     }
 
     public function testValidIfAllChildrenAreValid()
@@ -412,7 +296,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
     {
         $this->factory->expects($this->once())
             ->method('createNamedBuilder')
-            ->with('text', 'name', null, array())
+            ->with('name', 'text', null, array())
             ->will($this->returnValue($this->getBuilder('name')));
 
         $form = $this->getBuilder('person')
@@ -492,7 +376,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
         $this->form->add($child);
 
         $this->assertSame($this->form, $child->getParent());
-        $this->assertSame(array('foo' => $child), $this->form->getChildren());
+        $this->assertSame(array('foo' => $child), $this->form->all());
     }
 
     /**
@@ -556,7 +440,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
         $this->form->add($this->getBuilder('foo')->getForm());
         $this->form->add($this->getBuilder('bar')->getForm());
 
-        $this->assertSame($this->form->getChildren(), iterator_to_array($this->form));
+        $this->assertSame($this->form->all(), iterator_to_array($this->form));
     }
 
     public function testBound()
@@ -580,20 +464,39 @@ class FormTest extends \PHPUnit_Framework_TestCase
         $this->form->setData(null);
     }
 
+    public function testSetDataClonesObjectIfNotByReference()
+    {
+        $data = new \stdClass();
+        $form = $this->getBuilder('name', null, '\stdClass')->setByReference(false)->getForm();
+        $form->setData($data);
+
+        $this->assertNotSame($data, $form->getData());
+        $this->assertEquals($data, $form->getData());
+    }
+
+    public function testSetDataDoesNotCloneObjectIfByReference()
+    {
+        $data = new \stdClass();
+        $form = $this->getBuilder('name', null, '\stdClass')->setByReference(true)->getForm();
+        $form->setData($data);
+
+        $this->assertSame($data, $form->getData());
+    }
+
     public function testSetDataExecutesTransformationChain()
     {
         // use real event dispatcher now
         $form = $this->getBuilder('name', new EventDispatcher())
             ->addEventSubscriber(new FixedFilterListener(array(
-                'onSetData' => array(
+                'preSetData' => array(
                     'app' => 'filtered',
                 ),
             )))
-            ->appendNormTransformer(new FixedDataTransformer(array(
+            ->addModelTransformer(new FixedDataTransformer(array(
                 '' => '',
                 'filtered' => 'norm',
             )))
-            ->appendClientTransformer(new FixedDataTransformer(array(
+            ->addViewTransformer(new FixedDataTransformer(array(
                 '' => '',
                 'norm' => 'client',
             )))
@@ -603,17 +506,17 @@ class FormTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals('filtered', $form->getData());
         $this->assertEquals('norm', $form->getNormData());
-        $this->assertEquals('client', $form->getClientData());
+        $this->assertEquals('client', $form->getViewData());
     }
 
-    public function testSetDataExecutesClientTransformersInOrder()
+    public function testSetDataExecutesViewTransformersInOrder()
     {
         $form = $this->getBuilder()
-            ->appendClientTransformer(new FixedDataTransformer(array(
+            ->addViewTransformer(new FixedDataTransformer(array(
                 '' => '',
                 'first' => 'second',
             )))
-            ->appendClientTransformer(new FixedDataTransformer(array(
+            ->addViewTransformer(new FixedDataTransformer(array(
                 '' => '',
                 'second' => 'third',
             )))
@@ -621,19 +524,19 @@ class FormTest extends \PHPUnit_Framework_TestCase
 
         $form->setData('first');
 
-        $this->assertEquals('third', $form->getClientData());
+        $this->assertEquals('third', $form->getViewData());
     }
 
-    public function testSetDataExecutesNormTransformersInOrder()
+    public function testSetDataExecutesModelTransformersInReverseOrder()
     {
         $form = $this->getBuilder()
-            ->appendNormTransformer(new FixedDataTransformer(array(
-                '' => '',
-                'first' => 'second',
-            )))
-            ->appendNormTransformer(new FixedDataTransformer(array(
+            ->addModelTransformer(new FixedDataTransformer(array(
                 '' => '',
                 'second' => 'third',
+            )))
+            ->addModelTransformer(new FixedDataTransformer(array(
+                '' => '',
+                'first' => 'second',
             )))
             ->getForm();
 
@@ -654,17 +557,17 @@ class FormTest extends \PHPUnit_Framework_TestCase
 
         $this->assertSame('1', $form->getData());
         $this->assertSame('1', $form->getNormData());
-        $this->assertSame('1', $form->getClientData());
+        $this->assertSame('1', $form->getViewData());
     }
 
     /*
      * Data in client format should, if possible, always be a string to
      * facilitate differentiation between '0' and ''
      */
-    public function testSetDataConvertsScalarToStringIfOnlyNormTransformer()
+    public function testSetDataConvertsScalarToStringIfOnlyModelTransformer()
     {
         $form = $this->getBuilder()
-            ->appendNormTransformer(new FixedDataTransformer(array(
+            ->addModelTransformer(new FixedDataTransformer(array(
                 '' => '',
                 1 => 23,
             )))
@@ -674,7 +577,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
 
         $this->assertSame(1, $form->getData());
         $this->assertSame(23, $form->getNormData());
-        $this->assertSame('23', $form->getClientData());
+        $this->assertSame('23', $form->getViewData());
     }
 
     /*
@@ -689,7 +592,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
 
         $this->assertNull($form->getData());
         $this->assertNull($form->getNormData());
-        $this->assertSame('', $form->getClientData());
+        $this->assertSame('', $form->getViewData());
     }
 
     public function testBindConvertsEmptyToNullIfNoTransformer()
@@ -700,7 +603,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
 
         $this->assertNull($form->getData());
         $this->assertNull($form->getNormData());
-        $this->assertSame('', $form->getClientData());
+        $this->assertSame('', $form->getViewData());
     }
 
     public function testBindExecutesTransformationChain()
@@ -708,20 +611,20 @@ class FormTest extends \PHPUnit_Framework_TestCase
         // use real event dispatcher now
         $form = $this->getBuilder('name', new EventDispatcher())
             ->addEventSubscriber(new FixedFilterListener(array(
-                'onBindClientData' => array(
+                'preBind' => array(
                     'client' => 'filteredclient',
                 ),
-                'onBindNormData' => array(
+                'onBind' => array(
                     'norm' => 'filterednorm',
                 ),
             )))
-            ->appendClientTransformer(new FixedDataTransformer(array(
+            ->addViewTransformer(new FixedDataTransformer(array(
                 '' => '',
                 // direction is reversed!
                 'norm' => 'filteredclient',
                 'filterednorm' => 'cleanedclient'
             )))
-            ->appendNormTransformer(new FixedDataTransformer(array(
+            ->addModelTransformer(new FixedDataTransformer(array(
                 '' => '',
                 // direction is reversed!
                 'app' => 'filterednorm',
@@ -732,17 +635,17 @@ class FormTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals('app', $form->getData());
         $this->assertEquals('filterednorm', $form->getNormData());
-        $this->assertEquals('cleanedclient', $form->getClientData());
+        $this->assertEquals('cleanedclient', $form->getViewData());
     }
 
-    public function testBindExecutesClientTransformersInReverseOrder()
+    public function testBindExecutesViewTransformersInReverseOrder()
     {
         $form = $this->getBuilder()
-            ->appendClientTransformer(new FixedDataTransformer(array(
+            ->addViewTransformer(new FixedDataTransformer(array(
                 '' => '',
                 'third' => 'second',
             )))
-            ->appendClientTransformer(new FixedDataTransformer(array(
+            ->addViewTransformer(new FixedDataTransformer(array(
                 '' => '',
                 'second' => 'first',
             )))
@@ -753,16 +656,16 @@ class FormTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('third', $form->getNormData());
     }
 
-    public function testBindExecutesNormTransformersInReverseOrder()
+    public function testBindExecutesModelTransformersInOrder()
     {
         $form = $this->getBuilder()
-            ->appendNormTransformer(new FixedDataTransformer(array(
-                '' => '',
-                'third' => 'second',
-            )))
-            ->appendNormTransformer(new FixedDataTransformer(array(
+            ->addModelTransformer(new FixedDataTransformer(array(
                 '' => '',
                 'second' => 'first',
+            )))
+            ->addModelTransformer(new FixedDataTransformer(array(
+                '' => '',
+                'third' => 'second',
             )))
             ->getForm();
 
@@ -791,7 +694,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
             ->will($this->throwException(new TransformationFailedException()));
 
         $form = $this->getBuilder()
-            ->appendClientTransformer($transformer)
+            ->addViewTransformer($transformer)
             ->getForm();
 
         $form->bind('foobar');
@@ -803,7 +706,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
     {
         $form = $this->getBuilder()
             ->setEmptyData('foo')
-            ->appendClientTransformer(new FixedDataTransformer(array(
+            ->addViewTransformer(new FixedDataTransformer(array(
                 '' => '',
                 // direction is reversed!
                 'bar' => 'foo',
@@ -826,7 +729,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
 
                 return 'foo';
             })
-            ->appendClientTransformer(new FixedDataTransformer(array(
+            ->addViewTransformer(new FixedDataTransformer(array(
                 '' => '',
                 // direction is reversed!
                 'bar' => 'foo',
@@ -843,7 +746,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
         $mapper = $this->getDataMapper();
         $form = $this->getBuilder()
             ->setDataMapper($mapper)
-            ->appendClientTransformer(new FixedDataTransformer(array(
+            ->addViewTransformer(new FixedDataTransformer(array(
                 '' => '',
                 'foo' => 'bar',
             )))
@@ -852,8 +755,8 @@ class FormTest extends \PHPUnit_Framework_TestCase
 
         $child = $this->getBuilder()->getForm();
         $mapper->expects($this->once())
-            ->method('mapDataToForm')
-            ->with('bar', $child);
+            ->method('mapDataToForms')
+            ->with('bar', array($child));
 
         $form->add($child);
     }
@@ -863,7 +766,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
         $mapper = $this->getDataMapper();
         $form = $this->getBuilder()
             ->setDataMapper($mapper)
-            ->appendClientTransformer(new FixedDataTransformer(array(
+            ->addViewTransformer(new FixedDataTransformer(array(
                 '' => '',
                 'foo' => 'bar',
             )))
@@ -885,7 +788,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
         $mapper = $this->getDataMapper();
         $form = $this->getBuilder()
             ->setDataMapper($mapper)
-            ->appendClientTransformer(new FixedDataTransformer(array(
+            ->addViewTransformer(new FixedDataTransformer(array(
                 '' => '',
                 'foo' => 'bar',
             )))
@@ -1201,7 +1104,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnCallback(function (FormView $view, Form $form) use ($test, &$calls) {
                 $calls[] = 'type1::buildView';
                 $test->assertTrue($view->hasParent());
-                $test->assertFalse($view->hasChildren());
+                $test->assertEquals(0, count($view));
             }));
 
         $type1Extension->expects($this->once())
@@ -1209,7 +1112,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnCallback(function (FormView $view, Form $form) use ($test, &$calls) {
                 $calls[] = 'type1ext::buildView';
                 $test->assertTrue($view->hasParent());
-                $test->assertFalse($view->hasChildren());
+                $test->assertEquals(0, count($view));
             }));
 
         $type2->expects($this->once())
@@ -1217,7 +1120,7 @@ class FormTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnCallback(function (FormView $view, Form $form) use ($test, &$calls) {
                 $calls[] = 'type2::buildView';
                 $test->assertTrue($view->hasParent());
-                $test->assertFalse($view->hasChildren());
+                $test->assertEquals(0, count($view));
             }));
 
         $type2Extension->expects($this->once())
@@ -1225,35 +1128,35 @@ class FormTest extends \PHPUnit_Framework_TestCase
             ->will($this->returnCallback(function (FormView $view, Form $form) use ($test, &$calls) {
                 $calls[] = 'type2ext::buildView';
                 $test->assertTrue($view->hasParent());
-                $test->assertFalse($view->hasChildren());
+                $test->assertEquals(0, count($view));
             }));
 
         $type1->expects($this->once())
-            ->method('buildViewBottomUp')
+            ->method('finishView')
             ->will($this->returnCallback(function (FormView $view, Form $form) use ($test, &$calls) {
-                $calls[] = 'type1::buildViewBottomUp';
-                $test->assertTrue($view->hasChildren());
+                $calls[] = 'type1::finishView';
+                $test->assertGreaterThan(0, count($view));
             }));
 
         $type1Extension->expects($this->once())
-            ->method('buildViewBottomUp')
+            ->method('finishView')
             ->will($this->returnCallback(function (FormView $view, Form $form) use ($test, &$calls) {
-                $calls[] = 'type1ext::buildViewBottomUp';
-                $test->assertTrue($view->hasChildren());
+                $calls[] = 'type1ext::finishView';
+                $test->assertGreaterThan(0, count($view));
             }));
 
         $type2->expects($this->once())
-            ->method('buildViewBottomUp')
+            ->method('finishView')
             ->will($this->returnCallback(function (FormView $view, Form $form) use ($test, &$calls) {
-                $calls[] = 'type2::buildViewBottomUp';
-                $test->assertTrue($view->hasChildren());
+                $calls[] = 'type2::finishView';
+                $test->assertGreaterThan(0, count($view));
             }));
 
         $type2Extension->expects($this->once())
-            ->method('buildViewBottomUp')
+            ->method('finishView')
             ->will($this->returnCallback(function (FormView $view, Form $form) use ($test, &$calls) {
-                $calls[] = 'type2ext::buildViewBottomUp';
-                $test->assertTrue($view->hasChildren());
+                $calls[] = 'type2ext::finishView';
+                $test->assertGreaterThan(0, count($view));
             }));
 
         $form = $this->getBuilder()->setTypes(array($type1, $type2))->getForm();
@@ -1267,10 +1170,10 @@ class FormTest extends \PHPUnit_Framework_TestCase
             1 => 'type1ext::buildView',
             2 => 'type2::buildView',
             3 => 'type2ext::buildView',
-            4 => 'type1::buildViewBottomUp',
-            5 => 'type1ext::buildViewBottomUp',
-            6 => 'type2::buildViewBottomUp',
-            7 => 'type2ext::buildViewBottomUp',
+            4 => 'type1::finishView',
+            5 => 'type1ext::finishView',
+            6 => 'type2::finishView',
+            7 => 'type2ext::finishView',
         ), $calls);
     }
 
@@ -1314,18 +1217,90 @@ class FormTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException Symfony\Component\Form\Exception\FormException
-     * @expectedExceptionMessage Form with empty name can not have parent form.
+     * @expectedExceptionMessage A form with an empty name cannot have a parent form.
      */
     public function testFormCannotHaveEmptyNameNotInRootLevel()
     {
-        $parent = $this->getBuilder()
+        $this->getBuilder()
             ->add($this->getBuilder(''))
             ->getForm();
     }
 
-    protected function getBuilder($name = 'name', EventDispatcherInterface $dispatcher = null)
+    public function testGetPropertyPathReturnsConfiguredPath()
     {
-        return new FormBuilder($name, $this->factory, $dispatcher ?: $this->dispatcher);
+        $form = $this->getBuilder()->setPropertyPath('address.street')->getForm();
+
+        $this->assertEquals(new PropertyPath('address.street'), $form->getPropertyPath());
+    }
+
+    // see https://github.com/symfony/symfony/issues/3903
+    public function testGetPropertyPathDefaultsToNameIfParentHasDataClass()
+    {
+        $parent = $this->getBuilder(null, null, 'stdClass')->getForm();
+        $form = $this->getBuilder('name')->getForm();
+        $parent->add($form);
+
+        $this->assertEquals(new PropertyPath('name'), $form->getPropertyPath());
+    }
+
+    // see https://github.com/symfony/symfony/issues/3903
+    public function testGetPropertyPathDefaultsToIndexedNameIfParentDataClassIsNull()
+    {
+        $parent = $this->getBuilder()->getForm();
+        $form = $this->getBuilder('name')->getForm();
+        $parent->add($form);
+
+        $this->assertEquals(new PropertyPath('[name]'), $form->getPropertyPath());
+    }
+
+    /**
+     * @expectedException Symfony\Component\Form\Exception\FormException
+     */
+    public function testClientDataMustNotBeObjectIfDataClassIsNull()
+    {
+        $config = new FormConfig('name', null, $this->dispatcher);
+        $config->addViewTransformer(new FixedDataTransformer(array(
+            '' => '',
+            'foo' => new \stdClass(),
+        )));
+        $form = new Form($config);
+
+        $form->setData('foo');
+    }
+
+    public function testClientDataMayBeArrayAccessIfDataClassIsNull()
+    {
+        $arrayAccess = $this->getMock('\ArrayAccess');
+        $config = new FormConfig('name', null, $this->dispatcher);
+        $config->addViewTransformer(new FixedDataTransformer(array(
+            '' => '',
+            'foo' => $arrayAccess,
+        )));
+        $form = new Form($config);
+
+        $form->setData('foo');
+
+        $this->assertSame($arrayAccess, $form->getViewData());
+    }
+
+    /**
+     * @expectedException Symfony\Component\Form\Exception\FormException
+     */
+    public function testClientDataMustBeObjectIfDataClassIsSet()
+    {
+        $config = new FormConfig('name', 'stdClass', $this->dispatcher);
+        $config->addViewTransformer(new FixedDataTransformer(array(
+            '' => '',
+            'foo' => array('bar' => 'baz'),
+        )));
+        $form = new Form($config);
+
+        $form->setData('foo');
+    }
+
+    protected function getBuilder($name = 'name', EventDispatcherInterface $dispatcher = null, $dataClass = null)
+    {
+        return new FormBuilder($name, $dataClass, $dispatcher ?: $this->dispatcher, $this->factory);
     }
 
     protected function getMockForm($name = 'name')

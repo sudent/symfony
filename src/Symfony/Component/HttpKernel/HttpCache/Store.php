@@ -167,7 +167,7 @@ class Store implements StoreInterface
         $entries = array();
         $vary = $response->headers->get('vary');
         foreach ($this->getMetadata($key) as $entry) {
-            if (!isset($entry[1]['vary'])) {
+            if (!isset($entry[1]['vary'][0])) {
                 $entry[1]['vary'] = array('');
             }
 
@@ -293,7 +293,7 @@ class Store implements StoreInterface
     /**
      * Loads data for the given key.
      *
-     * @param string $key  The store key
+     * @param string $key The store key
      *
      * @return string The data associated with the key
      */
@@ -332,7 +332,7 @@ class Store implements StoreInterface
             return false;
         }
 
-        chmod($path, 0666 & ~umask());
+        @chmod($path, 0666 & ~umask());
     }
 
     public function getPath($key)

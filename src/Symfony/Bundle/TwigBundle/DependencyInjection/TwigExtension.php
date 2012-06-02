@@ -58,7 +58,7 @@ class TwigExtension extends Extension
         $container->setParameter('twig.form.resources', $config['form']['resources']);
 
         $reflClass = new \ReflectionClass('Symfony\Bridge\Twig\Extension\FormExtension');
-        $container->getDefinition('twig.loader')->addMethodCall('addPath', array(dirname(dirname($reflClass->getFileName())) . '/Resources/views/Form'));
+        $container->getDefinition('twig.loader')->addMethodCall('addPath', array(dirname(dirname($reflClass->getFileName())).'/Resources/views/Form'));
 
         if (!empty($config['globals'])) {
             $def = $container->getDefinition('twig');
@@ -84,6 +84,10 @@ class TwigExtension extends Extension
 
             $container->setDefinition('templating.engine.twig', $container->findDefinition('debug.templating.engine.twig'));
             $container->setAlias('debug.templating.engine.twig', 'templating.engine.twig');
+        }
+
+        if (!isset($config['autoescape'])) {
+            $container->findDefinition('templating.engine.twig')->addMethodCall('setDefaultEscapingStrategy', array(array(new Reference('templating.engine.twig'), 'guessDefaultEscapingStrategy')));
         }
 
         $this->addClassesToCompile(array(

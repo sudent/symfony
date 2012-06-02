@@ -24,9 +24,9 @@ class JsonResponse extends Response
     /**
      * Constructor.
      *
-     * @param mixed   $data     The response data
-     * @param integer $status   The response status code
-     * @param array   $headers  An array of response headers
+     * @param mixed   $data    The response data
+     * @param integer $status  The response status code
+     * @param array   $headers An array of response headers
      */
     public function __construct($data = array(), $status = 200, $headers = array())
     {
@@ -55,8 +55,11 @@ class JsonResponse extends Response
         if ($callback) {
             // taken from http://www.geekality.net/2011/08/03/valid-javascript-identifier/
             $pattern = '/^[$_\p{L}][$_\p{L}\p{Mn}\p{Mc}\p{Nd}\p{Pc}\x{200C}\x{200D}]*+$/u';
-            if (!preg_match($pattern, $callback)) {
-                throw new \InvalidArgumentException('The callback name is not valid.');
+            $parts = explode('.', $callback);
+            foreach ($parts as $part) {
+                if (!preg_match($pattern, $part)) {
+                    throw new \InvalidArgumentException('The callback name is not valid.');
+                }
             }
         }
 

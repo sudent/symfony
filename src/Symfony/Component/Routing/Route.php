@@ -25,7 +25,6 @@ class Route
     private $requirements;
     private $options;
     private $compiled;
-    private $hostnamePattern;
 
     static private $compilers = array();
 
@@ -36,21 +35,19 @@ class Route
      *
      *  * compiler_class: A class name able to compile this route instance (RouteCompiler by default)
      *
-     * @param string $pattern       The pattern to match
-     * @param array  $defaults      An array of default parameter values
-     * @param array  $requirements  An array of requirements for parameters (regexes)
-     * @param array  $options       An array of options
-     * @param string $hostname      The hostname pattern to match
+     * @param string $pattern      The pattern to match
+     * @param array  $defaults     An array of default parameter values
+     * @param array  $requirements An array of requirements for parameters (regexes)
+     * @param array  $options      An array of options
      *
      * @api
      */
-    public function __construct($pattern, array $defaults = array(), array $requirements = array(), array $options = array(), $hostnamePattern = null)
+    public function __construct($pattern, array $defaults = array(), array $requirements = array(), array $options = array())
     {
         $this->setPattern($pattern);
         $this->setDefaults($defaults);
         $this->setRequirements($requirements);
         $this->setOptions($options);
-        $this->setHostnamePattern($hostnamePattern);
     }
 
     public function __clone()
@@ -87,18 +84,6 @@ class Route
         }
 
         $this->compiled = null;
-
-        return $this;
-    }
-
-    public function getHostnamePattern()
-    {
-        return $this->hostnamePattern;
-    }
-
-    public function setHostnamePattern($pattern)
-    {
-        $this->hostnamePattern = $pattern;
 
         return $this;
     }
@@ -329,7 +314,7 @@ class Route
     /**
      * Sets a requirement for the given key.
      *
-     * @param string $key The key
+     * @param string $key   The key
      * @param string $regex The regex
      *
      * @return Route The current Route instance

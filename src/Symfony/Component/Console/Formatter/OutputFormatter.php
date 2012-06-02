@@ -32,8 +32,8 @@ class OutputFormatter implements OutputFormatterInterface
     /**
      * Initializes console output formatter.
      *
-     * @param   Boolean $decorated  Whether this formatter should actually decorate strings
-     * @param   array   $styles     Array of "name => FormatterStyle" instances
+     * @param Boolean $decorated Whether this formatter should actually decorate strings
+     * @param array   $styles    Array of "name => FormatterStyle" instances
      *
      * @api
      */
@@ -41,9 +41,9 @@ class OutputFormatter implements OutputFormatterInterface
     {
         $this->decorated = (Boolean) $decorated;
 
-        $this->setStyle('error',    new OutputFormatterStyle('white', 'red'));
-        $this->setStyle('info',     new OutputFormatterStyle('green'));
-        $this->setStyle('comment',  new OutputFormatterStyle('yellow'));
+        $this->setStyle('error', new OutputFormatterStyle('white', 'red'));
+        $this->setStyle('info', new OutputFormatterStyle('green'));
+        $this->setStyle('comment', new OutputFormatterStyle('yellow'));
         $this->setStyle('question', new OutputFormatterStyle('black', 'cyan'));
 
         foreach ($styles as $name => $style) {
@@ -93,9 +93,9 @@ class OutputFormatter implements OutputFormatterInterface
     /**
      * Checks if output formatter has style with specified name.
      *
-     * @param   string  $name
+     * @param string $name
      *
-     * @return  Boolean
+     * @return Boolean
      *
      * @api
      */
@@ -107,11 +107,11 @@ class OutputFormatter implements OutputFormatterInterface
     /**
      * Gets style options from style with specified name.
      *
-     * @param   string  $name
+     * @param string $name
      *
-     * @return  OutputFormatterStyleInterface
+     * @return OutputFormatterStyleInterface
      *
-     * @throws  \InvalidArgumentException When style isn't defined
+     * @throws \InvalidArgumentException When style isn't defined
      *
      * @api
      */
@@ -127,7 +127,7 @@ class OutputFormatter implements OutputFormatterInterface
     /**
      * Formats a message according to the given styles.
      *
-     * @param  string $message The message to style
+     * @param string $message The message to style
      *
      * @return string The styled message
      *
@@ -181,9 +181,9 @@ class OutputFormatter implements OutputFormatterInterface
     /**
      * Tries to create new style instance from string.
      *
-     * @param   string  $string
+     * @param string $string
      *
-     * @return  OutputFormatterStyle|Boolean false if string is not format string
+     * @return OutputFormatterStyle|Boolean false if string is not format string
      */
     private function createStyleFromString($string)
     {
@@ -211,7 +211,7 @@ class OutputFormatter implements OutputFormatterInterface
      * Applies style to text if must be applied.
      *
      * @param OutputFormatterStyleInterface $style Style to apply
-     * @param string $text Input text
+     * @param string                        $text  Input text
      *
      * @return string string Styled text
      */

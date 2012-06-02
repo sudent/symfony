@@ -14,14 +14,14 @@ namespace Symfony\Component\HttpFoundation\File\MimeType;
 /**
  * Guesses the mime type of a file
  *
- * @author Bernhard Schussek <bernhard.schussek@symfony.com>
+ * @author Bernhard Schussek <bschussek@gmail.com>
  */
 interface MimeTypeGuesserInterface
 {
     /**
      * Guesses the mime type of the file with the given path.
      *
-     * @param  string $path   The path to the file
+     * @param string $path The path to the file
      *
      * @return string         The mime type or NULL, if none could be guessed
      *

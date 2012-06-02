@@ -47,6 +47,9 @@ class Process
     private $process;
     private $status = self::STATUS_READY;
 
+    private $fileHandles;
+    private $readBytes;
+
     /**
      * Exit codes translation table.
      *
@@ -195,7 +198,21 @@ class Process
         $this->stdout = '';
         $this->stderr = '';
         $callback = $this->buildCallback($callback);
-        $descriptors = array(array('pipe', 'r'), array('pipe', 'w'), array('pipe', 'w'));
+
+        //Fix for PHP bug #51800: reading from STDOUT pipe hangs forever on Windows if the output is too big.
+        //Workaround for this problem is to use temporary files instead of pipes on Windows platform.
+        //@see https://bugs.php.net/bug.php?id=51800
+        if (defined('PHP_WINDOWS_VERSION_BUILD')) {
+            $this->fileHandles = array(
+                self::STDOUT => tmpfile(),
+            );
+            $this->readBytes = array(
+                self::STDOUT => 0,
+            );
+            $descriptors = array(array('pipe', 'r'), $this->fileHandles[self::STDOUT], array('pipe', 'w'));
+        } else {
+            $descriptors = array(array('pipe', 'r'), array('pipe', 'w'), array('pipe', 'w'));
+        }
 
         $commandline = $this->commandline;
 
@@ -222,14 +239,18 @@ class Process
             unset($this->pipes[0]);
 
             return;
-        } else {
-            $writePipes = array($this->pipes[0]);
-            unset($this->pipes[0]);
-            $stdinLen = strlen($this->stdin);
-            $stdinOffset = 0;
         }
 
+        $writePipes = array($this->pipes[0]);
+        unset($this->pipes[0]);
+        $stdinLen = strlen($this->stdin);
+        $stdinOffset = 0;
+
         while ($writePipes) {
+            if (defined('PHP_WINDOWS_VERSION_BUILD')) {
+                $this->processFileHandles($callback);
+            }
+
             $r = $this->pipes;
             $w = $writePipes;
             $e = null;
@@ -238,7 +259,8 @@ class Process
 
             if (false === $n) {
                 break;
-            } elseif ($n === 0) {
+            }
+            if ($n === 0) {
                 proc_terminate($this->process);
 
                 throw new \RuntimeException('The process timed out.');
@@ -288,31 +310,39 @@ class Process
     {
         $this->processInformation = proc_get_status($this->process);
         $callback = $this->buildCallback($callback);
-        while ($this->pipes) {
-            $r = $this->pipes;
-            $w = null;
-            $e = null;
-
-            $n = @stream_select($r, $w, $e, $this->timeout);
-
-            if (false === $n) {
-                break;
-            }
-            if (0 === $n) {
-                proc_terminate($this->process);
-
-                throw new \RuntimeException('The process timed out.');
+        while ($this->pipes || (defined('PHP_WINDOWS_VERSION_BUILD') && $this->fileHandles)) {
+            if (defined('PHP_WINDOWS_VERSION_BUILD') && $this->fileHandles) {
+                $this->processFileHandles($callback, !$this->pipes);
             }
 
-            foreach ($r as $pipe) {
-                $type = array_search($pipe, $this->pipes);
-                $data = fread($pipe, 8192);
-                if (strlen($data) > 0) {
-                    call_user_func($callback, $type == 1 ? self::OUT : self::ERR, $data);
+            if ($this->pipes) {
+                $r = $this->pipes;
+                $w = null;
+                $e = null;
+
+                $n = @stream_select($r, $w, $e, $this->timeout);
+
+                if (false === $n) {
+                    $this->pipes = array();
+
+                    continue;
                 }
-                if (false === $data || feof($pipe)) {
-                    fclose($pipe);
-                    unset($this->pipes[$type]);
+                if (0 === $n) {
+                    proc_terminate($this->process);
+
+                    throw new \RuntimeException('The process timed out.');
+                }
+
+                foreach ($r as $pipe) {
+                    $type = array_search($pipe, $this->pipes);
+                    $data = fread($pipe, 8192);
+                    if (strlen($data) > 0) {
+                        call_user_func($callback, $type == 1 ? self::OUT : self::ERR, $data);
+                    }
+                    if (false === $data || feof($pipe)) {
+                        fclose($pipe);
+                        unset($this->pipes[$type]);
+                    }
                 }
             }
         }
@@ -517,6 +547,13 @@ class Process
 
             $exitcode = proc_close($this->process);
             $this->exitcode = -1 === $this->processInformation['exitcode'] ? $exitcode : $this->processInformation['exitcode'];
+
+            if (defined('PHP_WINDOWS_VERSION_BUILD')) {
+                foreach ($this->fileHandles as $fileHandle) {
+                    fclose($fileHandle);
+                }
+                $this->fileHandles = array();
+            }
         }
         $this->status = self::STATUS_TERMINATED;
 
@@ -660,8 +697,34 @@ class Process
 
     protected function updateOutput()
     {
-        if (isset($this->pipes[self::STDOUT]) && is_resource($this->pipes[self::STDOUT])) {
+        if (defined('PHP_WINDOWS_VERSION_BUILD') && isset($this->fileHandles[self::STDOUT]) && is_resource($this->fileHandles[self::STDOUT])) {
+            fseek($this->fileHandles[self::STDOUT], $this->readBytes[self::STDOUT]);
+            $this->addOutput(stream_get_contents($this->fileHandles[self::STDOUT]));
+        } elseif (isset($this->pipes[self::STDOUT]) && is_resource($this->pipes[self::STDOUT])) {
             $this->addOutput(stream_get_contents($this->pipes[self::STDOUT]));
+        }
+    }
+
+    /**
+     * Handles the windows file handles fallbacks
+     *
+     * @param mixed $callback A valid PHP callback
+     * @param Boolean $closeEmptyHandles if true, handles that are empty will be assumed closed
+     */
+    private function processFileHandles($callback, $closeEmptyHandles = false)
+    {
+        $fh = $this->fileHandles;
+        foreach ($fh as $type => $fileHandle) {
+            fseek($fileHandle, $this->readBytes[$type]);
+            $data = fread($fileHandle, 8192);
+            if (strlen($data) > 0) {
+                $this->readBytes[$type] += strlen($data);
+                call_user_func($callback, $type == 1 ? self::OUT : self::ERR, $data);
+            }
+            if (false === $data || ($closeEmptyHandles && '' === $data && feof($fileHandle))) {
+                fclose($fileHandle);
+                unset($this->fileHandles[$type]);
+            }
         }
     }
 }

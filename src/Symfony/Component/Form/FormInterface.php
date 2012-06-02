@@ -14,14 +14,16 @@ namespace Symfony\Component\Form;
 /**
  * A form group bundling multiple form forms
  *
- * @author Bernhard Schussek <bernhard.schussek@symfony.com>
+ * @author Bernhard Schussek <bschussek@gmail.com>
  */
 interface FormInterface extends \ArrayAccess, \Traversable, \Countable
 {
     /**
      * Sets the parent form.
      *
-     * @param FormInterface $parent The parent form
+     * @param  FormInterface $parent The parent form
+     *
+     * @return FormInterface The form instance
      */
     function setParent(FormInterface $parent = null);
 
@@ -42,7 +44,9 @@ interface FormInterface extends \ArrayAccess, \Traversable, \Countable
     /**
      * Adds a child to the form.
      *
-     * @param FormInterface $child The FormInterface to add as a child
+     * @param  FormInterface $child The FormInterface to add as a child
+     *
+     * @return FormInterface The form instance
      */
     function add(FormInterface $child);
 
@@ -67,7 +71,9 @@ interface FormInterface extends \ArrayAccess, \Traversable, \Countable
     /**
      * Removes a child from the form.
      *
-     * @param string $name The name of the child to remove
+     * @param  string $name The name of the child to remove
+     *
+     * @return FormInterface The form instance
      */
     function remove($name);
 
@@ -76,14 +82,7 @@ interface FormInterface extends \ArrayAccess, \Traversable, \Countable
      *
      * @return array An array of FormInterface instances
      */
-    function getChildren();
-
-    /**
-     * Return whether the form has children.
-     *
-     * @return Boolean
-     */
-    function hasChildren();
+    function all();
 
     /**
      * Returns all errors.
@@ -95,11 +94,11 @@ interface FormInterface extends \ArrayAccess, \Traversable, \Countable
     /**
      * Updates the field with default data.
      *
-     * @param array $appData The data formatted as expected for the underlying object
+     * @param  array $modelData The data formatted as expected for the underlying object
      *
-     * @return Form The current form
+     * @return FormInterface The form instance
      */
-    function setData($appData);
+    function setData($modelData);
 
     /**
      * Returns the data in the format needed for the underlying object.
@@ -111,7 +110,7 @@ interface FormInterface extends \ArrayAccess, \Traversable, \Countable
     /**
      * Returns the normalized data of the field.
      *
-     * @return mixed  When the field is not bound, the default data is returned.
+     * @return mixed When the field is not bound, the default data is returned.
      *                When the field is bound, the normalized bound data is
      *                returned if the field is valid, null otherwise.
      */
@@ -122,7 +121,7 @@ interface FormInterface extends \ArrayAccess, \Traversable, \Countable
      *
      * @return string
      */
-    function getClientData();
+    function getViewData();
 
     /**
      * Returns the extra data.
@@ -132,6 +131,13 @@ interface FormInterface extends \ArrayAccess, \Traversable, \Countable
     function getExtraData();
 
     /**
+     * Returns the form's configuration.
+     *
+     * @return FormConfigInterface The configuration.
+     */
+    function getConfig();
+
+    /**
      * Returns whether the field is bound.
      *
      * @return Boolean true if the form is bound to input values, false otherwise
@@ -139,23 +145,25 @@ interface FormInterface extends \ArrayAccess, \Traversable, \Countable
     function isBound();
 
     /**
-     * Returns the supported types.
-     *
-     * @return array An array of FormTypeInterface
-     */
-    function getTypes();
-
-    /**
      * Returns the name by which the form is identified in forms.
      *
-     * @return string  The name of the form.
+     * @return string The name of the form.
      */
     function getName();
 
     /**
+     * Returns the property path that the form is mapped to.
+     *
+     * @return Util\PropertyPath The property path.
+     */
+    function getPropertyPath();
+
+    /**
      * Adds an error to this form.
      *
-     * @param FormError $error
+     * @param  FormError $error
+     *
+     * @return FormInterface The form instance
      */
     function addError(FormError $error);
 
@@ -207,28 +215,16 @@ interface FormInterface extends \ArrayAccess, \Traversable, \Countable
     /**
      * Writes data into the form.
      *
-     * @param mixed $data  The data
+     * @param  mixed $data The data
+     *
+     * @return FormInterface The form instance
      */
     function bind($data);
 
     /**
-     * Returns whether the form has an attribute with the given name.
-     *
-     * @param string $name The name of the attribute
-     */
-    function hasAttribute($name);
-
-    /**
-     * Returns the value of the attributes with the given name.
-     *
-     * @param string $name The name of the attribute
-     */
-    function getAttribute($name);
-
-    /**
      * Returns the root of the form tree.
      *
-     * @return FormInterface  The root of the tree
+     * @return FormInterface The root of the tree
      */
     function getRoot();
 
@@ -242,9 +238,9 @@ interface FormInterface extends \ArrayAccess, \Traversable, \Countable
     /**
      * Creates a view.
      *
-     * @param FormView $parent The parent view
+     * @param FormViewInterface $parent The parent view
      *
-     * @return FormView The view
+     * @return FormViewInterface The view
      */
-    function createView(FormView $parent = null);
+    function createView(FormViewInterface $parent = null);
 }

@@ -12,6 +12,7 @@
 namespace Symfony\Component\Form\Tests\Extension\Core\Type;
 
 use Symfony\Component\Form\Extension\Core\View\ChoiceView;
+use Symfony\Component\Form\FormError;
 
 class DateTypeTest extends LocalizedTestCase
 {
@@ -23,7 +24,7 @@ class DateTypeTest extends LocalizedTestCase
     }
 
     /**
-     * @expectedException Symfony\Component\Form\Exception\FormException
+     * @expectedException Symfony\Component\OptionsResolver\Exception\InvalidOptionsException
      */
     public function testInvalidWidgetOption()
     {
@@ -33,7 +34,7 @@ class DateTypeTest extends LocalizedTestCase
     }
 
     /**
-     * @expectedException Symfony\Component\Form\Exception\FormException
+     * @expectedException Symfony\Component\OptionsResolver\Exception\InvalidOptionsException
      */
     public function testInvalidInputOption()
     {
@@ -54,7 +55,7 @@ class DateTypeTest extends LocalizedTestCase
         $form->bind('2.6.2010');
 
         $this->assertDateTimeEquals(new \DateTime('2010-06-02 UTC'), $form->getData());
-        $this->assertEquals('02.06.2010', $form->getClientData());
+        $this->assertEquals('02.06.2010', $form->getViewData());
     }
 
     public function testSubmitFromSingleTextString()
@@ -69,7 +70,7 @@ class DateTypeTest extends LocalizedTestCase
         $form->bind('2.6.2010');
 
         $this->assertEquals('2010-06-02', $form->getData());
-        $this->assertEquals('02.06.2010', $form->getClientData());
+        $this->assertEquals('02.06.2010', $form->getViewData());
     }
 
     public function testSubmitFromSingleTextTimestamp()
@@ -86,7 +87,7 @@ class DateTypeTest extends LocalizedTestCase
         $dateTime = new \DateTime('2010-06-02 UTC');
 
         $this->assertEquals($dateTime->format('U'), $form->getData());
-        $this->assertEquals('02.06.2010', $form->getClientData());
+        $this->assertEquals('02.06.2010', $form->getViewData());
     }
 
     public function testSubmitFromSingleTextRaw()
@@ -107,7 +108,7 @@ class DateTypeTest extends LocalizedTestCase
         );
 
         $this->assertEquals($output, $form->getData());
-        $this->assertEquals('02.06.2010', $form->getClientData());
+        $this->assertEquals('02.06.2010', $form->getViewData());
     }
 
     public function testSubmitFromText()
@@ -129,7 +130,7 @@ class DateTypeTest extends LocalizedTestCase
         $dateTime = new \DateTime('2010-06-02 UTC');
 
         $this->assertDateTimeEquals($dateTime, $form->getData());
-        $this->assertEquals($text, $form->getClientData());
+        $this->assertEquals($text, $form->getViewData());
     }
 
     public function testSubmitFromChoice()
@@ -151,7 +152,7 @@ class DateTypeTest extends LocalizedTestCase
         $dateTime = new \DateTime('2010-06-02 UTC');
 
         $this->assertDateTimeEquals($dateTime, $form->getData());
-        $this->assertEquals($text, $form->getClientData());
+        $this->assertEquals($text, $form->getViewData());
     }
 
     public function testSubmitFromChoiceEmpty()
@@ -172,7 +173,7 @@ class DateTypeTest extends LocalizedTestCase
         $form->bind($text);
 
         $this->assertNull($form->getData());
-        $this->assertEquals($text, $form->getClientData());
+        $this->assertEquals($text, $form->getViewData());
     }
 
     public function testSubmitFromInputDateTimeDifferentPattern()
@@ -188,7 +189,7 @@ class DateTypeTest extends LocalizedTestCase
         $form->bind('06*2010*02');
 
         $this->assertDateTimeEquals(new \DateTime('2010-06-02 UTC'), $form->getData());
-        $this->assertEquals('06*2010*02', $form->getClientData());
+        $this->assertEquals('06*2010*02', $form->getViewData());
     }
 
     public function testSubmitFromInputStringDifferentPattern()
@@ -204,7 +205,7 @@ class DateTypeTest extends LocalizedTestCase
         $form->bind('06*2010*02');
 
         $this->assertEquals('2010-06-02', $form->getData());
-        $this->assertEquals('06*2010*02', $form->getClientData());
+        $this->assertEquals('06*2010*02', $form->getViewData());
     }
 
     public function testSubmitFromInputTimestampDifferentPattern()
@@ -222,7 +223,7 @@ class DateTypeTest extends LocalizedTestCase
         $dateTime = new \DateTime('2010-06-02 UTC');
 
         $this->assertEquals($dateTime->format('U'), $form->getData());
-        $this->assertEquals('06*2010*02', $form->getClientData());
+        $this->assertEquals('06*2010*02', $form->getViewData());
     }
 
     public function testSubmitFromInputRawDifferentPattern()
@@ -244,7 +245,7 @@ class DateTypeTest extends LocalizedTestCase
         );
 
         $this->assertEquals($output, $form->getData());
-        $this->assertEquals('06*2010*02', $form->getClientData());
+        $this->assertEquals('06*2010*02', $form->getViewData());
     }
 
     /**
@@ -262,7 +263,7 @@ class DateTypeTest extends LocalizedTestCase
         $form->setData('2010-06-02');
 
         // This would be what would be outputed if '0' was mistaken for \IntlDateFormatter::FULL
-        $this->assertNotEquals('Mittwoch, 02. Juni 2010', $form->getClientData());
+        $this->assertNotEquals('Mittwoch, 02. Juni 2010', $form->getViewData());
     }
 
     /**
@@ -296,7 +297,7 @@ class DateTypeTest extends LocalizedTestCase
 
         $form->setData('2010-06-02');
 
-        $this->assertEquals('01.06.2010', $form->getClientData());
+        $this->assertEquals('01.06.2010', $form->getViewData());
     }
 
     public function testSetData_differentTimezonesDateTime()
@@ -313,7 +314,7 @@ class DateTypeTest extends LocalizedTestCase
         $form->setData($dateTime);
 
         $this->assertDateTimeEquals($dateTime, $form->getData());
-        $this->assertEquals('01.06.2010', $form->getClientData());
+        $this->assertEquals('01.06.2010', $form->getViewData());
     }
 
     public function testYearsOption()
@@ -327,7 +328,7 @@ class DateTypeTest extends LocalizedTestCase
         $this->assertEquals(array(
             new ChoiceView('2010', '2010'),
             new ChoiceView('2011', '2011'),
-        ), $view->getChild('year')->get('choices'));
+        ), $view->get('year')->getVar('choices'));
     }
 
     public function testMonthsOption()
@@ -341,7 +342,7 @@ class DateTypeTest extends LocalizedTestCase
         $this->assertEquals(array(
             new ChoiceView('6', '06'),
             new ChoiceView('7', '07'),
-        ), $view->getChild('month')->get('choices'));
+        ), $view->get('month')->getVar('choices'));
     }
 
     public function testMonthsOptionNumericIfFormatContainsNoMonth()
@@ -356,7 +357,7 @@ class DateTypeTest extends LocalizedTestCase
         $this->assertEquals(array(
             new ChoiceView('6', '06'),
             new ChoiceView('7', '07'),
-        ), $view->getChild('month')->get('choices'));
+        ), $view->get('month')->getVar('choices'));
     }
 
     public function testMonthsOptionShortFormat()
@@ -371,7 +372,7 @@ class DateTypeTest extends LocalizedTestCase
         $this->assertEquals(array(
             new ChoiceView('1', 'Jän'),
             new ChoiceView('4', 'Apr')
-        ), $view->getChild('month')->get('choices'));
+        ), $view->get('month')->getVar('choices'));
     }
 
     public function testMonthsOptionLongFormat()
@@ -386,7 +387,7 @@ class DateTypeTest extends LocalizedTestCase
         $this->assertEquals(array(
             new ChoiceView('1', 'Jänner'),
             new ChoiceView('4', 'April'),
-        ), $view->getChild('month')->get('choices'));
+        ), $view->get('month')->getVar('choices'));
     }
 
     public function testMonthsOptionLongFormatWithDifferentTimezone()
@@ -401,7 +402,7 @@ class DateTypeTest extends LocalizedTestCase
         $this->assertEquals(array(
             new ChoiceView('1', 'Jänner'),
             new ChoiceView('4', 'April'),
-        ), $view->getChild('month')->get('choices'));
+        ), $view->get('month')->getVar('choices'));
     }
 
     public function testIsDayWithinRangeReturnsTrueIfWithin()
@@ -415,7 +416,7 @@ class DateTypeTest extends LocalizedTestCase
         $this->assertEquals(array(
             new ChoiceView('6', '06'),
             new ChoiceView('7', '07'),
-        ), $view->getChild('day')->get('choices'));
+        ), $view->get('day')->getVar('choices'));
     }
 
     public function testIsPartiallyFilledReturnsFalseIfSingleText()
@@ -495,7 +496,7 @@ class DateTypeTest extends LocalizedTestCase
         $form = $this->factory->create('date');
         $view = $form->createView();
 
-        $this->assertSame('{{ day }}.{{ month }}.{{ year }}', $view->get('date_pattern'));
+        $this->assertSame('{{ day }}.{{ month }}.{{ year }}', $view->getVar('date_pattern'));
     }
 
     public function testPassDatePatternToViewDifferentPattern()
@@ -506,7 +507,7 @@ class DateTypeTest extends LocalizedTestCase
 
         $view = $form->createView();
 
-        $this->assertSame('{{ month }}*{{ year }}*{{ day }}', $view->get('date_pattern'));
+        $this->assertSame('{{ month }}*{{ year }}*{{ day }}', $view->getVar('date_pattern'));
     }
 
     public function testDontPassDatePatternIfText()
@@ -516,7 +517,7 @@ class DateTypeTest extends LocalizedTestCase
         ));
         $view = $form->createView();
 
-        $this->assertNull($view->get('date_pattern'));
+        $this->assertNull($view->getVar('date_pattern'));
     }
 
     public function testPassWidgetToView()
@@ -526,7 +527,7 @@ class DateTypeTest extends LocalizedTestCase
         ));
         $view = $form->createView();
 
-        $this->assertSame('single_text', $view->get('widget'));
+        $this->assertSame('single_text', $view->getVar('widget'));
     }
 
     // Bug fix
@@ -535,5 +536,15 @@ class DateTypeTest extends LocalizedTestCase
         // Throws an exception if "data_class" option is not explicitely set
         // to null in the type
         $this->factory->create('date', new \DateTime());
+    }
+
+    public function testSingleTextWidgetShouldUseTheRightInputType()
+    {
+        $form = $this->factory->create('date', null, array(
+            'widget' => 'single_text',
+        ));
+
+        $view = $form->createView();
+        $this->assertEquals('date', $view->getVar('type'));
     }
 }

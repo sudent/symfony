@@ -142,7 +142,7 @@ class Form extends Link implements \ArrayAccess
      */
     public function getPhpValues()
     {
-        $qs = http_build_query($this->getValues());
+        $qs = http_build_query($this->getValues(), '', '&');
         parse_str($qs, $values);
 
         return $values;
@@ -160,7 +160,7 @@ class Form extends Link implements \ArrayAccess
      */
     public function getPhpFiles()
     {
-        $qs = http_build_query($this->getFiles());
+        $qs = http_build_query($this->getFiles(), '', '&');
         parse_str($qs, $values);
 
         return $values;
@@ -339,7 +339,7 @@ class Form extends Link implements \ArrayAccess
                     throw new \LogicException('The selected node does not have a form ancestor.');
                 }
             } while ('form' != $node->nodeName);
-        } elseif('form' != $node->nodeName) {
+        } elseif ('form' != $node->nodeName) {
             throw new \LogicException(sprintf('Unable to submit on a "%s" tag.', $node->nodeName));
         }
 

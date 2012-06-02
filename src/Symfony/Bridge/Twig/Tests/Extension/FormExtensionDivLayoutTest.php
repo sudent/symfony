@@ -11,12 +11,12 @@
 
 namespace Symfony\Bridge\Twig\Tests\Extension;
 
-use Symfony\Component\Form\FormView;
 use Symfony\Bridge\Twig\Extension\FormExtension;
 use Symfony\Bridge\Twig\Extension\TranslationExtension;
-use Symfony\Component\Form\Tests\AbstractDivLayoutTest;
 use Symfony\Bridge\Twig\Tests\Extension\Fixtures\StubTranslator;
 use Symfony\Bridge\Twig\Tests\Extension\Fixtures\StubFilesystemLoader;
+use Symfony\Component\Form\FormView;
+use Symfony\Component\Form\Tests\AbstractDivLayoutTest;
 
 class FormExtensionDivLayoutTest extends AbstractDivLayoutTest
 {
@@ -69,7 +69,7 @@ class FormExtensionDivLayoutTest extends AbstractDivLayoutTest
     public function testThemeBlockInheritanceUsingUse()
     {
         $view = $this->factory
-            ->createNamed('email', 'name')
+            ->createNamed('name', 'email')
             ->createView()
         ;
 
@@ -84,7 +84,7 @@ class FormExtensionDivLayoutTest extends AbstractDivLayoutTest
     public function testThemeBlockInheritanceUsingExtend()
     {
         $view = $this->factory
-            ->createNamed('email', 'name')
+            ->createNamed('name', 'email')
             ->createView()
         ;
 

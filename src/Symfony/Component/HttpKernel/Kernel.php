@@ -58,7 +58,12 @@ abstract class Kernel implements KernelInterface, TerminableInterface
     protected $classes;
     protected $errorReportingLevel;
 
-    const VERSION = '2.1.0-DEV';
+    const VERSION         = '2.1.0-DEV';
+    const VERSION_ID      = '20100';
+    const MAJOR_VERSION   = '2';
+    const MINOR_VERSION   = '1';
+    const RELEASE_VERSION = '0';
+    const EXTRA_VERSION   = 'DEV';
 
     /**
      * Constructor.
@@ -387,7 +392,7 @@ abstract class Kernel implements KernelInterface, TerminableInterface
     {
         if (null === $this->rootDir) {
             $r = new \ReflectionObject($this);
-            $this->rootDir = dirname($r->getFileName());
+            $this->rootDir = str_replace('\\', '/', dirname($r->getFileName()));
         }
 
         return $this->rootDir;
@@ -408,8 +413,8 @@ abstract class Kernel implements KernelInterface, TerminableInterface
     /**
      * Loads the PHP class cache.
      *
-     * @param string  $name      The cache name prefix
-     * @param string  $extension File extension of the resulting file
+     * @param string $name      The cache name prefix
+     * @param string $extension File extension of the resulting file
      */
     public function loadClassCache($name = 'classes', $extension = '.php')
     {

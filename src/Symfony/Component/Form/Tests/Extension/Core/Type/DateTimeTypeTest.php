@@ -173,7 +173,7 @@ class DateTimeTypeTest extends LocalizedTestCase
         $outputTime->setTimezone(new \DateTimeZone('America/New_York'));
 
         $this->assertDateTimeEquals($outputTime, $form->getData());
-        $this->assertEquals('2010-06-02 03:04', $form->getClientData());
+        $this->assertEquals('2010-06-02 03:04', $form->getViewData());
     }
 
     public function testSubmit_stringSingleText()
@@ -188,7 +188,7 @@ class DateTimeTypeTest extends LocalizedTestCase
         $form->bind('2010-06-02 03:04:05');
 
         $this->assertEquals('2010-06-02 03:04:00', $form->getData());
-        $this->assertEquals('2010-06-02 03:04', $form->getClientData());
+        $this->assertEquals('2010-06-02 03:04', $form->getViewData());
     }
 
     public function testSubmit_stringSingleText_withSeconds()
@@ -204,7 +204,7 @@ class DateTimeTypeTest extends LocalizedTestCase
         $form->bind('2010-06-02 03:04:05');
 
         $this->assertEquals('2010-06-02 03:04:05', $form->getData());
-        $this->assertEquals('2010-06-02 03:04:05', $form->getClientData());
+        $this->assertEquals('2010-06-02 03:04:05', $form->getViewData());
     }
 
     public function testSubmit_differentPattern()
@@ -226,37 +226,21 @@ class DateTimeTypeTest extends LocalizedTestCase
         $this->assertDateTimeEquals($dateTime, $form->getData());
     }
 
-    public function testSubmit_invalidDateTime()
-    {
-        $form = $this->factory->create('datetime', null, array(
-            'invalid_message' => 'Customized invalid message',
-            // Only possible with the "text" widget, because the "choice"
-            // widget automatically fields invalid values
-            'widget' => 'text',
-        ));
-
-        $form->bind(array(
-            'date' => array(
-                'day' => '31',
-                'month' => '9',
-                'year' => '2010',
-            ),
-            'time' => array(
-                'hour' => '25',
-                'minute' => '4',
-            ),
-        ));
-
-        $this->assertFalse($form->isValid());
-        $this->assertEquals(array(new FormError('Customized invalid message', array())), $form['date']->getErrors());
-        $this->assertEquals(array(new FormError('Customized invalid message', array())), $form['time']->getErrors());
-    }
-
     // Bug fix
     public function testInitializeWithDateTime()
     {
         // Throws an exception if "data_class" option is not explicitely set
         // to null in the type
         $this->factory->create('datetime', new \DateTime());
+    }
+
+    public function testSingleTextWidgetShouldUseTheRightInputType()
+    {
+        $form = $this->factory->create('datetime', null, array(
+            'widget' => 'single_text',
+        ));
+
+        $view = $form->createView();
+        $this->assertEquals('datetime', $view->getVar('type'));
     }
 }

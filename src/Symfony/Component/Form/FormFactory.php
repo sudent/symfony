@@ -14,6 +14,7 @@ namespace Symfony\Component\Form;
 use Symfony\Component\Form\Exception\FormException;
 use Symfony\Component\Form\Exception\UnexpectedTypeException;
 use Symfony\Component\Form\Exception\TypeDefinitionException;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class FormFactory implements FormFactoryInterface
 {
@@ -60,11 +61,7 @@ class FormFactory implements FormFactoryInterface
     }
 
     /**
-     * Returns whether the given type is supported.
-     *
-     * @param string $name The name of the type
-     *
-     * @return Boolean Whether the type is supported
+     * {@inheritdoc}
      */
     public function hasType($name)
     {
@@ -82,9 +79,7 @@ class FormFactory implements FormFactoryInterface
     }
 
     /**
-     * Add a type.
-     *
-     * @param FormTypeInterface $type The type
+     * {@inheritdoc}
      */
     public function addType(FormTypeInterface $type)
     {
@@ -96,15 +91,7 @@ class FormFactory implements FormFactoryInterface
     }
 
     /**
-     * Returns a type by name.
-     *
-     * This methods registers the type extensions from the form extensions.
-     *
-     * @param string|FormTypeInterface $name The name of the type or a type instance
-     *
-     * @return FormTypeInterface The type
-     *
-     * @throws FormException if the type can not be retrieved from any extension
+     * {@inheritdoc}
      */
     public function getType($name)
     {
@@ -120,97 +107,43 @@ class FormFactory implements FormFactoryInterface
     }
 
     /**
-     * Returns a form.
-     *
-     * @see createBuilder()
-     *
-     * @param string|FormTypeInterface  $type       The type of the form
-     * @param mixed                     $data       The initial data
-     * @param array                     $options    The options
-     * @param FormBuilder               $parent     The parent builder
-     *
-     * @return Form The form named after the type
-     *
-     * @throws FormException if any given option is not applicable to the given type
+     * {@inheritdoc}
      */
-    public function create($type, $data = null, array $options = array(), FormBuilder $parent = null)
+    public function create($type, $data = null, array $options = array(), FormBuilderInterface $parent = null)
     {
         return $this->createBuilder($type, $data, $options, $parent)->getForm();
     }
 
     /**
-     * Returns a form.
-     *
-     * @see createNamedBuilder()
-     *
-     * @param string|FormTypeInterface  $type       The type of the form
-     * @param string                    $name       The name of the form
-     * @param mixed                     $data       The initial data
-     * @param array                     $options    The options
-     * @param FormBuilder               $parent     The parent builder
-     *
-     * @return Form The form
-     *
-     * @throws FormException if any given option is not applicable to the given type
+     * {@inheritdoc}
      */
-    public function createNamed($type, $name, $data = null, array $options = array(), FormBuilder $parent = null)
+    public function createNamed($name, $type, $data = null, array $options = array(), FormBuilderInterface $parent = null)
     {
-        return $this->createNamedBuilder($type, $name, $data, $options, $parent)->getForm();
+        return $this->createNamedBuilder($name, $type, $data, $options, $parent)->getForm();
     }
 
     /**
-     * Returns a form for a property of a class.
-     *
-     * @see createBuilderForProperty()
-     *
-     * @param string       $class     The fully qualified class name
-     * @param string       $property  The name of the property to guess for
-     * @param mixed        $data      The initial data
-     * @param array        $options   The options for the builder
-     * @param FormBuilder  $parent    The parent builder
-     *
-     * @return Form The form named after the property
-     *
-     * @throws FormException if any given option is not applicable to the form type
+     * {@inheritdoc}
      */
-    public function createForProperty($class, $property, $data = null, array $options = array(), FormBuilder $parent = null)
+    public function createForProperty($class, $property, $data = null, array $options = array(), FormBuilderInterface $parent = null)
     {
         return $this->createBuilderForProperty($class, $property, $data, $options, $parent)->getForm();
     }
 
     /**
-     * Returns a form builder
-     *
-     * @param string|FormTypeInterface  $type       The type of the form
-     * @param mixed                     $data       The initial data
-     * @param array                     $options    The options
-     * @param FormBuilder               $parent     The parent builder
-     *
-     * @return FormBuilder The form builder
-     *
-     * @throws FormException if any given option is not applicable to the given type
+     * {@inheritdoc}
      */
-    public function createBuilder($type, $data = null, array $options = array(), FormBuilder $parent = null)
+    public function createBuilder($type, $data = null, array $options = array(), FormBuilderInterface $parent = null)
     {
         $name = is_object($type) ? $type->getName() : $type;
 
-        return $this->createNamedBuilder($type, $name, $data, $options, $parent);
+        return $this->createNamedBuilder($name, $type, $data, $options, $parent);
     }
 
     /**
-     * Returns a form builder.
-     *
-     * @param string|FormTypeInterface  $type       The type of the form
-     * @param string                    $name       The name of the form
-     * @param mixed                     $data       The initial data
-     * @param array                     $options    The options
-     * @param FormBuilder               $parent     The parent builder
-     *
-     * @return FormBuilder The form builder
-     *
-     * @throws FormException if any given option is not applicable to the given type
+     * {@inheritdoc}
      */
-    public function createNamedBuilder($type, $name, $data = null, array $options = array(), FormBuilder $parent = null)
+    public function createNamedBuilder($name, $type, $data = null, array $options = array(), FormBuilderInterface $parent = null)
     {
         if (!array_key_exists('data', $options)) {
             $options['data'] = $data;
@@ -218,9 +151,7 @@ class FormFactory implements FormFactoryInterface
 
         $builder = null;
         $types = array();
-        $optionValues = array();
-        $knownOptions = array();
-        $defaultOptions = new DefaultOptions();
+        $optionsResolver = new OptionsResolver();
 
         // Bottom-up determination of the type hierarchy
         // Start with the actual type and look for the parent type
@@ -253,16 +184,12 @@ class FormFactory implements FormFactoryInterface
             // Merge the default options of all types to an array of default
             // options. Default options of children override default options
             // of parents.
-            $typeOptions = $type->getDefaultOptions();
-            $defaultOptions->add($typeOptions);
-            $defaultOptions->addAllowedValues($type->getAllowedOptionValues());
-            $knownOptions = array_merge($knownOptions, array_keys($typeOptions));
+            /* @var FormTypeInterface $type */
+            $type->setDefaultOptions($optionsResolver);
 
             foreach ($type->getExtensions() as $typeExtension) {
-                $extensionOptions = $typeExtension->getDefaultOptions();
-                $defaultOptions->add($extensionOptions);
-                $defaultOptions->addAllowedValues($typeExtension->getAllowedOptionValues());
-                $knownOptions = array_merge($knownOptions, array_keys($extensionOptions));
+                /* @var FormTypeExtensionInterface $typeExtension */
+                $typeExtension->setDefaultOptions($optionsResolver);
             }
         }
 
@@ -270,21 +197,27 @@ class FormFactory implements FormFactoryInterface
         $type = end($types);
 
         // Validate options required by the factory
-        $diff = array_diff(self::$requiredOptions, $knownOptions);
+        $diff = array();
+
+        foreach (self::$requiredOptions as $requiredOption) {
+            if (!$optionsResolver->isKnown($requiredOption)) {
+                $diff[] = $requiredOption;
+            }
+        }
 
         if (count($diff) > 0) {
             throw new TypeDefinitionException(sprintf('Type "%s" should support the option(s) "%s"', $type->getName(), implode('", "', $diff)));
         }
 
         // Resolve options
-        $options = $defaultOptions->resolve($options);
+        $options = $optionsResolver->resolve($options);
 
         for ($i = 0, $l = count($types); $i < $l && !$builder; ++$i) {
             $builder = $types[$i]->createBuilder($name, $this, $options);
         }
 
         if (!$builder) {
-            throw new TypeDefinitionException(sprintf('Type "%s" or any of its parents should return a FormBuilder instance from createBuilder()', $type->getName()));
+            throw new TypeDefinitionException(sprintf('Type "%s" or any of its parents should return a FormBuilderInterface instance from createBuilder()', $type->getName()));
         }
 
         $builder->setTypes($types);
@@ -304,22 +237,9 @@ class FormFactory implements FormFactoryInterface
     }
 
     /**
-     * Returns a form builder for a property of a class.
-     *
-     * If any of the 'max_length', 'required' and type options can be guessed,
-     * and are not provided in the options argument, the guessed value is used.
-     *
-     * @param string       $class     The fully qualified class name
-     * @param string       $property  The name of the property to guess for
-     * @param mixed        $data      The initial data
-     * @param array        $options   The options for the builder
-     * @param FormBuilder  $parent    The parent builder
-     *
-     * @return FormBuilder The form builder named after the property
-     *
-     * @throws FormException if any given option is not applicable to the form type
+     * {@inheritdoc}
      */
-    public function createBuilderForProperty($class, $property, $data = null, array $options = array(), FormBuilder $parent = null)
+    public function createBuilderForProperty($class, $property, $data = null, array $options = array(), FormBuilderInterface $parent = null)
     {
         if (!$this->guesser) {
             $this->loadGuesser();
@@ -327,20 +247,27 @@ class FormFactory implements FormFactoryInterface
 
         $typeGuess = $this->guesser->guessType($class, $property);
         $maxLengthGuess = $this->guesser->guessMaxLength($class, $property);
+        // Keep $minLengthGuess for BC until Symfony 2.3
         $minLengthGuess = $this->guesser->guessMinLength($class, $property);
         $requiredGuess = $this->guesser->guessRequired($class, $property);
+        $patternGuess = $this->guesser->guessPattern($class, $property);
 
         $type = $typeGuess ? $typeGuess->getType() : 'text';
 
         $maxLength = $maxLengthGuess ? $maxLengthGuess->getValue() : null;
         $minLength = $minLengthGuess ? $minLengthGuess->getValue() : null;
-        $minLength = $minLength ?: 0;
+        $pattern   = $patternGuess ? $patternGuess->getValue() : null;
+
+        // overrides $minLength, if set
+        if (null !== $pattern) {
+            $options = array_merge(array('pattern' => $pattern), $options);
+        }
 
         if (null !== $maxLength) {
             $options = array_merge(array('max_length' => $maxLength), $options);
         }
 
-        if ($minLength > 0) {
+        if (null !== $minLength && $minLength > 0) {
             $options = array_merge(array('pattern' => '.{'.$minLength.','.$maxLength.'}'), $options);
         }
 
@@ -353,7 +280,7 @@ class FormFactory implements FormFactoryInterface
             $options = array_merge($typeGuess->getOptions(), $options);
         }
 
-        return $this->createNamedBuilder($type, $property, $data, $options, $parent);
+        return $this->createNamedBuilder($property, $type, $data, $options, $parent);
     }
 
     /**

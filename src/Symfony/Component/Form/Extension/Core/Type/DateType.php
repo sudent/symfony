@@ -11,30 +11,32 @@
 
 namespace Symfony\Component\Form\Extension\Core\Type;
 
-use Symfony\Component\Form\Extension\Core\ChoiceList\ChoiceList;
-
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\FormInterface;
-use Symfony\Component\Form\FormBuilder;
+use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\Exception\CreationException;
-use Symfony\Component\Form\FormView;
+use Symfony\Component\Form\FormViewInterface;
 use Symfony\Component\Form\Extension\Core\DataTransformer\DateTimeToLocalizedStringTransformer;
 use Symfony\Component\Form\Extension\Core\DataTransformer\DateTimeToArrayTransformer;
 use Symfony\Component\Form\Extension\Core\DataTransformer\DateTimeToStringTransformer;
 use Symfony\Component\Form\Extension\Core\DataTransformer\DateTimeToTimestampTransformer;
 use Symfony\Component\Form\ReversedTransformer;
+use Symfony\Component\OptionsResolver\Options;
+use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 
 class DateType extends AbstractType
 {
+    const DEFAULT_FORMAT = \IntlDateFormatter::MEDIUM;
+
     /**
      * {@inheritdoc}
      */
-    public function buildForm(FormBuilder $builder, array $options)
+    public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $format = $options['format'];
         $pattern = null;
 
-        $allowedFormatOptionValues = array(
+        $allowedFormats = array(
             \IntlDateFormatter::FULL,
             \IntlDateFormatter::LONG,
             \IntlDateFormatter::MEDIUM,
@@ -42,11 +44,9 @@ class DateType extends AbstractType
         );
 
         // If $format is not in the allowed options, it's considered as the pattern of the formatter if it is a string
-        if (!in_array($format, $allowedFormatOptionValues, true)) {
+        if (!in_array($format, $allowedFormats, true)) {
             if (is_string($format)) {
-                $defaultOptions = $this->getDefaultOptions();
-
-                $format = $defaultOptions['format'];
+                $format = self::DEFAULT_FORMAT;
                 $pattern = $options['format'];
             } else {
                 throw new CreationException('The "format" option must be one of the IntlDateFormatter constants (FULL, LONG, MEDIUM, SHORT) or a string representing a custom pattern');
@@ -61,9 +61,10 @@ class DateType extends AbstractType
             \IntlDateFormatter::GREGORIAN,
             $pattern
         );
+        $formatter->setLenient(false);
 
         if ('single_text' === $options['widget']) {
-            $builder->appendClientTransformer(new DateTimeToLocalizedStringTransformer($options['data_timezone'], $options['user_timezone'], $format, \IntlDateFormatter::NONE, \IntlDateFormatter::GREGORIAN, $pattern));
+            $builder->addViewTransformer(new DateTimeToLocalizedStringTransformer($options['data_timezone'], $options['user_timezone'], $format, \IntlDateFormatter::NONE, \IntlDateFormatter::GREGORIAN, $pattern));
         } else {
             $yearOptions = $monthOptions = $dayOptions = array();
 
@@ -110,40 +111,42 @@ class DateType extends AbstractType
                 ->add('year', $options['widget'], $yearOptions)
                 ->add('month', $options['widget'], $monthOptions)
                 ->add('day', $options['widget'], $dayOptions)
-                ->appendClientTransformer(new DateTimeToArrayTransformer(
+                ->addViewTransformer(new DateTimeToArrayTransformer(
                     $options['data_timezone'], $options['user_timezone'], array('year', 'month', 'day')
                 ))
             ;
         }
 
         if ('string' === $options['input']) {
-            $builder->appendNormTransformer(new ReversedTransformer(
+            $builder->addModelTransformer(new ReversedTransformer(
                 new DateTimeToStringTransformer($options['data_timezone'], $options['data_timezone'], 'Y-m-d')
             ));
         } elseif ('timestamp' === $options['input']) {
-            $builder->appendNormTransformer(new ReversedTransformer(
+            $builder->addModelTransformer(new ReversedTransformer(
                 new DateTimeToTimestampTransformer($options['data_timezone'], $options['data_timezone'])
             ));
         } elseif ('array' === $options['input']) {
-            $builder->appendNormTransformer(new ReversedTransformer(
+            $builder->addModelTransformer(new ReversedTransformer(
                 new DateTimeToArrayTransformer($options['data_timezone'], $options['data_timezone'], array('year', 'month', 'day'))
             ));
         }
 
-        $builder
-            ->setAttribute('formatter', $formatter)
-            ->setAttribute('widget', $options['widget']);
+        $builder->setAttribute('formatter', $formatter);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function buildViewBottomUp(FormView $view, FormInterface $form)
+    public function finishView(FormViewInterface $view, FormInterface $form, array $options)
     {
-        $view->set('widget', $form->getAttribute('widget'));
+        $view->setVar('widget', $options['widget']);
 
-        if ($view->hasChildren()) {
-            $pattern = $form->getAttribute('formatter')->getPattern();
+        if ('single_text' === $options['widget']) {
+            $view->setVar('type', 'date');
+        }
+
+        if (count($view) > 0) {
+            $pattern = $form->getConfig()->getAttribute('formatter')->getPattern();
 
             // set right order with respect to locale (e.g.: de_DE=dd.MM.yy; en_US=M/d/yy)
             // lookup various formats at http://userguide.icu-project.org/formatparse/datetime
@@ -154,22 +157,26 @@ class DateType extends AbstractType
                 $pattern = '{{ year }}-{{ month }}-{{ day }}';
             }
 
-            $view->set('date_pattern', $pattern);
+            $view->setVar('date_pattern', $pattern);
         }
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getDefaultOptions()
+    public function setDefaultOptions(OptionsResolverInterface $resolver)
     {
-        return array(
+        $compound = function (Options $options) {
+            return $options['widget'] !== 'single_text';
+        };
+
+        $resolver->setDefaults(array(
             'years'          => range(date('Y') - 5, date('Y') + 5),
             'months'         => range(1, 12),
             'days'           => range(1, 31),
             'widget'         => 'choice',
             'input'          => 'datetime',
-            'format'         => \IntlDateFormatter::MEDIUM,
+            'format'         => self::DEFAULT_FORMAT,
             'data_timezone'  => null,
             'user_timezone'  => null,
             'empty_value'    => null,
@@ -182,15 +189,10 @@ class DateType extends AbstractType
             // representation is not \DateTime, but an array, we need to unset
             // this option.
             'data_class'     => null,
-        );
-    }
+            'compound'       => $compound,
+        ));
 
-    /**
-     * {@inheritdoc}
-     */
-    public function getAllowedOptionValues()
-    {
-        return array(
+        $resolver->setAllowedValues(array(
             'input'     => array(
                 'datetime',
                 'string',
@@ -202,13 +204,13 @@ class DateType extends AbstractType
                 'text',
                 'choice',
             ),
-        );
+        ));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getParent(array $options)
+    public function getParent()
     {
         return 'field';
     }
