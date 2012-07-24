@@ -20,12 +20,12 @@ class CompiledRouteTest extends \PHPUnit_Framework_TestCase
     {
         $route = new Route('/{foo}', array('foo' => 'bar'), array('foo' => '\d+'), array('foo' => 'bar'));
 
-        $compiled = new CompiledRoute($route, 'prefix', 'regex', array('tokens'), array('variables'));
+        $compiled = new CompiledRoute($route, 'prefix', 'regex', array('tokens'), array(), array(), array(), array(), array('variables'));
         $this->assertEquals($route, $compiled->getRoute(), '__construct() takes a route as its first argument');
         $this->assertEquals('prefix', $compiled->getStaticPrefix(), '__construct() takes a static prefix as its second argument');
         $this->assertEquals('regex', $compiled->getRegex(), '__construct() takes a regexp as its third argument');
         $this->assertEquals(array('tokens'), $compiled->getTokens(), '__construct() takes an array of tokens as its fourth argument');
-        $this->assertEquals(array('variables'), $compiled->getVariables(), '__construct() takes an array of variables as its fifth argument');
+        $this->assertEquals(array('variables'), $compiled->getVariables(), '__construct() takes an array of variables as its ninth argument');
     }
 
     public function testgetPatterngetDefaultsgetOptionsgetRequirements()

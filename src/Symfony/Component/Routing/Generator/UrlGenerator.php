@@ -126,14 +126,14 @@ class UrlGenerator implements UrlGeneratorInterface
         // the Route has a cache of its own and is not recompiled as long as it does not get modified
         $compiledRoute = $route->compile();
 
-        return $this->doGenerate($compiledRoute->getVariables(), $route->getDefaults(), $route->getRequirements(), $compiledRoute->getTokens(), $parameters, $name, $absolute);
+        return $this->doGenerate($compiledRoute->getVariables(), $route->getDefaults(), $route->getRequirements(), $compiledRoute->getTokens(), $parameters, $name, $absolute, $compiledRoute->getHostnameTokens());
     }
 
     /**
      * @throws MissingMandatoryParametersException When route has some missing mandatory parameters
      * @throws InvalidParameterException When a parameter value is not correct
      */
-    protected function doGenerate($variables, $defaults, $requirements, $tokens, $parameters, $name, $absolute)
+    protected function doGenerate($variables, $defaults, $requirements, $tokens, $parameters, $name, $absolute, $hostnameTokens)
     {
         $variables = array_flip($variables);
 
@@ -202,11 +202,36 @@ class UrlGenerator implements UrlGeneratorInterface
             $url .= '?'.$query;
         }
 
-        if ($this->context->getHost()) {
+        $url = $this->context->getBaseUrl().$url;
+
+        if ($host = $this->context->getHost()) {
             $scheme = $this->context->getScheme();
             if (isset($requirements['_scheme']) && ($req = strtolower($requirements['_scheme'])) && $scheme != $req) {
                 $absolute = true;
                 $scheme = $req;
+            }
+
+            if ($hostnameTokens) {
+                $ghost = '';
+                foreach ($hostnameTokens as $token) {
+                    if ('variable' === $token[0]) {
+                        if (in_array($tparams[$token[3]], array(null, '', false), true)) {
+                            // check requirement
+                            if ($tparams[$token[3]] && !preg_match('#^'.$token[2].'$#', $tparams[$token[3]])) {
+                                throw new InvalidParameterException(sprintf('Parameter "%s" for route "%s" must match "%s" ("%s" given).', $token[3], $name, $token[2], $tparams[$token[3]]));
+                            }
+                        }
+
+                        $ghost = $token[1].$tparams[$token[3]].$ghost;
+                    } elseif ('text' === $token[0]) {
+                        $ghost = $token[1].$ghost;
+                    }
+                }
+
+                if ($ghost != $host) {
+                    $host = $ghost;
+                    $absolute = true;
+                }
             }
 
             if ($absolute) {
@@ -217,7 +242,7 @@ class UrlGenerator implements UrlGeneratorInterface
                     $port = ':'.$this->context->getHttpsPort();
                 }
 
-                $url = $scheme.'://'.$this->context->getHost().$port.$url;
+                $url = $scheme.'://'.$host.$port.$url;
             }
         }
 
