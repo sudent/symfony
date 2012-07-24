@@ -179,7 +179,7 @@ class UrlGenerator implements UrlGeneratorInterface
             }
         }
 
-        if ('' === $url) {
+        if (!$url) {
             $url = '/';
         }
 
@@ -201,8 +201,6 @@ class UrlGenerator implements UrlGeneratorInterface
         if ($extra && $query = http_build_query($extra, '', '&')) {
             $url .= '?'.$query;
         }
-
-        $url = $this->context->getBaseUrl().$url;
 
         if ($host = $this->context->getHost()) {
             $scheme = $this->context->getScheme();
