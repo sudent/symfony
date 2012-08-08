@@ -184,7 +184,7 @@ class UrlGenerator implements UrlGeneratorInterface
         }
 
         // do not encode the contexts base url as it is already encoded (see Symfony\Component\HttpFoundation\Request)
-        //$url = $this->context->getBaseUrl().strtr(rawurlencode($url), $this->decodedChars);
+        $url = $this->context->getBaseUrl().strtr(rawurlencode($url), $this->decodedChars);
 
         // the path segments "." and ".." are interpreted as relative reference when resolving a URI; see http://tools.ietf.org/html/rfc3986#section-3.3
         // so we need to encode them as they are not used for this purpose here
