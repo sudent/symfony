@@ -70,7 +70,7 @@
     "minimum-stability": "dev",
     "extra": {
         "branch-alias": {
-            "dev-merge_latest_190912": "2.2-dev"
+            "dev-merge_latest_190912": "2.1-dev"
         }
     }
 }
