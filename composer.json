@@ -67,5 +67,10 @@
             "SessionHandlerInterface": "src/Symfony/Component/HttpFoundation/Resources/stubs"
         }
     },
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "extra": {
+        "branch-alias": {
+            "master": "2.2-dev"
+        }
+    }
 }
