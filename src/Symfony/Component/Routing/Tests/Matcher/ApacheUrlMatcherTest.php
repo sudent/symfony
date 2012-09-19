@@ -51,9 +51,9 @@ class ApacheUrlMatcherTest extends \PHPUnit_Framework_TestCase
                 'Simple route',
                 '/hello/world',
                 array(
-                    '_ROUTING__route' => 'hello',
-                    '_ROUTING__controller' => 'AcmeBundle:Default:index',
-                    '_ROUTING_name' => 'world',
+                    '_ROUTING_route' => 'hello',
+                    '_ROUTING_default__controller' => 'AcmeBundle:Default:index',
+                    '_ROUTING_param_name' => 'world',
                 ),
                 array(
                     '_route' => 'hello',
@@ -65,38 +65,38 @@ class ApacheUrlMatcherTest extends \PHPUnit_Framework_TestCase
                 'Route with params and defaults',
                 '/hello/hugo',
                 array(
-                    '_ROUTING__route' => 'hello',
-                    '_ROUTING__controller' => 'AcmeBundle:Default:index',
-                    '_ROUTING_name' => 'hugo',
-                    '_ROUTING_DEFAULTS_name' => 'world',
+                    '_ROUTING_route' => 'hello',
+                    '_ROUTING_default__controller' => 'AcmeBundle:Default:index',
+                    '_ROUTING_param_name' => 'hugo',
+                    '_ROUTING_default_name' => 'world',
                 ),
                 array(
-                    'name' => 'hugo',
                     '_route' => 'hello',
                     '_controller' => 'AcmeBundle:Default:index',
+                    'name' => 'hugo',
                 ),
             ),
             array(
                 'Route with defaults only',
                 '/hello',
                 array(
-                    '_ROUTING__route' => 'hello',
-                    '_ROUTING__controller' => 'AcmeBundle:Default:index',
-                    '_ROUTING_DEFAULTS_name' => 'world',
+                    '_ROUTING_route' => 'hello',
+                    '_ROUTING_default__controller' => 'AcmeBundle:Default:index',
+                    '_ROUTING_default_name' => 'world',
                 ),
                 array(
-                    'name' => 'world',
                     '_route' => 'hello',
                     '_controller' => 'AcmeBundle:Default:index',
+                    'name' => 'world',
                 ),
             ),
             array(
                 'REDIRECT_ envs',
                 '/hello/world',
                 array(
-                    'REDIRECT__ROUTING__route' => 'hello',
-                    'REDIRECT__ROUTING__controller' => 'AcmeBundle:Default:index',
-                    'REDIRECT__ROUTING_name' => 'world',
+                    'REDIRECT__ROUTING_route' => 'hello',
+                    'REDIRECT__ROUTING_default__controller' => 'AcmeBundle:Default:index',
+                    'REDIRECT__ROUTING_param_name' => 'world',
                 ),
                 array(
                     '_route' => 'hello',

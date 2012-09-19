@@ -255,6 +255,27 @@ class UrlGeneratorTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('/app.php/a./.a/a../..a/...', $this->getGenerator($routes)->generate('test'));
     }
 
+    public function testWithHostnameDifferentFromContext()
+    {
+        $routes = $this->getRoutes('test', new Route('/{name}', array(), array(), array(), '{locale}.example.com'));
+
+        $this->assertEquals('http://fr.example.com/app.php/Fabien', $this->getGenerator($routes)->generate('test', array('name' =>'Fabien', 'locale' => 'fr')));
+    }
+
+    public function testWithHostnameSameAsContext()
+    {
+        $routes = $this->getRoutes('test', new Route('/{name}', array(), array(), array(), '{locale}.example.com'));
+
+        $this->assertEquals('/app.php/Fabien', $this->getGenerator($routes, array('host' => 'fr.example.com'))->generate('test', array('name' =>'Fabien', 'locale' => 'fr')));
+    }
+
+    public function testWithHostnameSameAsContextAndAbsolute()
+    {
+        $routes = $this->getRoutes('test', new Route('/{name}', array(), array(), array(), '{locale}.example.com'));
+
+        $this->assertEquals('http://fr.example.com/app.php/Fabien', $this->getGenerator($routes, array('host' => 'fr.example.com'))->generate('test', array('name' =>'Fabien', 'locale' => 'fr'), true));
+    }
+
     protected function getGenerator(RouteCollection $routes, array $parameters = array(), $logger = null)
     {
         $context = new RequestContext('/app.php');

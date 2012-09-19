@@ -29,25 +29,81 @@ class RouteCompiler implements RouteCompilerInterface
      */
     public function compile(Route $route)
     {
+        $staticPrefix = null;
+        $hostnameVariables = array();
+        $pathVariables = array();
+        $variables = array();
+        $tokens = array();
+        $regex = null;
+        $hostnameRegex = null;
+        $hostnameTokens = array();
+
+        if (null !== $hostnamePattern = $route->getHostnamePattern()) {
+            $result = $this->compilePattern($route, $hostnamePattern, false);
+
+            $hostnameVariables = $result['variables'];
+            $variables = array_merge($variables, $hostnameVariables);
+
+            $hostnameTokens = $result['tokens'];
+            $hostnameRegex = $result['regex'];
+        }
+
         $pattern = $route->getPattern();
+        $result = $this->compilePattern($route, $pattern, true);
+
+        $staticPrefix = $result['staticPrefix'];
+
+        $pathVariables = $result['variables'];
+        $variables = array_merge($variables, $pathVariables);
+
+        $tokens = $result['tokens'];
+        $regex = $result['regex'];
+
+        return new CompiledRoute(
+            $staticPrefix,
+            $regex,
+            $tokens,
+            $pathVariables,
+            $hostnameRegex,
+            $hostnameTokens,
+            $hostnameVariables,
+            array_unique($variables)
+        );
+    }
+
+    private function compilePattern(Route $route, $pattern, $isPath)
+    {
         $len = strlen($pattern);
         $tokens = array();
         $variables = array();
         $pos = 0;
-        preg_match_all('#.\{(\w+)\}#', $pattern, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER);
+
+        if ($isPath) {
+            $re = '#(?P<separator>.)\{(?P<var>\w+)\}#';
+        } else {
+            $re = '#(?P<separator>^|.)\{(?P<var>\w+)\}#';
+        }
+
+        preg_match_all($re, $pattern, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER);
+
         foreach ($matches as $match) {
             if ($text = substr($pattern, $pos, $match[0][1] - $pos)) {
                 $tokens[] = array('text', $text);
             }
-
             $pos = $match[0][1] + strlen($match[0][0]);
-            $var = $match[1][0];
+            $var = $match['var'][0];
 
             if (null !== $req = $route->getRequirement($var)) {
                 $regexp = $req;
             } else {
-                // Use the character preceding the variable as a separator
-                $separators = array($match[0][0][0]);
+
+                // Use the character preceding the variable as a separator when available
+                if (1 === strlen($match['separator'][0])) {
+                    $separators = array($match['separator'][0]);
+                } else {
+                    // happens only for hostname patterns
+                    $separators = array('.');
+                }
 
                 if ($pos !== $len) {
                     // Use the character following the variable as the separator when available
@@ -56,7 +112,7 @@ class RouteCompiler implements RouteCompilerInterface
                 $regexp = sprintf('[^%s]+', preg_quote(implode('', array_unique($separators)), self::REGEX_DELIMITER));
             }
 
-            $tokens[] = array('variable', $match[0][0][0], $regexp, $var);
+            $tokens[] = array('variable', $match['separator'][0], $regexp, $var);
 
             if (is_numeric($var)) {
                 throw new \DomainException(sprintf('Variable name "%s" cannot be numeric in route pattern "%s". Please use a different name.', $var, $route->getPattern()));
@@ -74,12 +130,14 @@ class RouteCompiler implements RouteCompilerInterface
 
         // find the first optional token
         $firstOptional = INF;
-        for ($i = count($tokens) - 1; $i >= 0; $i--) {
-            $token = $tokens[$i];
-            if ('variable' === $token[0] && $route->hasDefault($token[3])) {
-                $firstOptional = $i;
-            } else {
-                break;
+        if ($isPath) {
+            for ($i = count($tokens) - 1; $i >= 0; $i--) {
+                $token = $tokens[$i];
+                if ('variable' === $token[0] && $route->hasDefault($token[3])) {
+                    $firstOptional = $i;
+                } else {
+                    break;
+                }
             }
         }
 
@@ -89,11 +147,11 @@ class RouteCompiler implements RouteCompilerInterface
             $regexp .= $this->computeRegexp($tokens, $i, $firstOptional);
         }
 
-        return new CompiledRoute(
-            'text' === $tokens[0][0] ? $tokens[0][1] : '',
-            self::REGEX_DELIMITER.'^'.$regexp.'$'.self::REGEX_DELIMITER.'s',
-            array_reverse($tokens),
-            $variables
+        return array(
+            'staticPrefix' => 'text' === $tokens[0][0] ? $tokens[0][1] : '',
+            'regex' => self::REGEX_DELIMITER.'^'.$regexp.'$'.self::REGEX_DELIMITER.'s',
+            'tokens' => array_reverse($tokens),
+            'variables' => $variables,
         );
     }
 
